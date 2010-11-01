@@ -26,14 +26,12 @@ import java.util.regex.Pattern;
 
 import net.danopia.protonet.R;
 import net.danopia.protonet.TerminalView;
+import net.danopia.protonet.bean.ChannelBean;
 import net.danopia.protonet.bean.HostBean;
-import net.danopia.protonet.bean.PortForwardBean;
 import net.danopia.protonet.bean.SelectionArea;
 import net.danopia.protonet.transport.AbsTransport;
 import net.danopia.protonet.transport.TransportFactory;
 import net.danopia.protonet.util.HostDatabase;
-
-
 import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
@@ -264,9 +262,9 @@ public class TerminalBridge implements VDUDisplay {
 		transport.setUseAuthAgent(host.getUseAuthAgent());
 		transport.setEmulation(emulation);
 
-		if (transport.canForwardPorts()) {
-			for (PortForwardBean portForward : manager.hostdb.getPortForwardsForHost(host))
-				transport.addPortForward(portForward);
+		if (transport.canChannels()) {
+			for (ChannelBean portForward : manager.hostdb.getChannelsForHost(host))
+				transport.addChannel(portForward);
 		}
 
 		outputLine(manager.res.getString(R.string.terminal_connecting, host.getHostname(), host.getPort(), host.getProtocol()));
@@ -826,33 +824,33 @@ public class TerminalBridge implements VDUDisplay {
 	/**
 	 * @return whether underlying transport can forward ports
 	 */
-	public boolean canFowardPorts() {
-		return transport.canForwardPorts();
+	public boolean canChannels() {
+		return transport.canChannels();
 	}
 
 	/**
-	 * Adds the {@link PortForwardBean} to the list.
+	 * Adds the {@link ChannelBean} to the list.
 	 * @param portForward the port forward bean to add
 	 * @return true on successful addition
 	 */
-	public boolean addPortForward(PortForwardBean portForward) {
-		return transport.addPortForward(portForward);
+	public boolean addChannel(ChannelBean portForward) {
+		return transport.addChannel(portForward);
 	}
 
 	/**
-	 * Removes the {@link PortForwardBean} from the list.
+	 * Removes the {@link ChannelBean} from the list.
 	 * @param portForward the port forward bean to remove
 	 * @return true on successful removal
 	 */
-	public boolean removePortForward(PortForwardBean portForward) {
-		return transport.removePortForward(portForward);
+	public boolean removeChannel(ChannelBean portForward) {
+		return transport.removeChannel(portForward);
 	}
 
 	/**
 	 * @return the list of port forwards
 	 */
-	public List<PortForwardBean> getPortForwards() {
-		return transport.getPortForwards();
+	public List<ChannelBean> getChannels() {
+		return transport.getChannels();
 	}
 
 	/**
@@ -861,13 +859,13 @@ public class TerminalBridge implements VDUDisplay {
 	 * @param portForward member of our current port forwards list to enable
 	 * @return true on successful port forward setup
 	 */
-	public boolean enablePortForward(PortForwardBean portForward) {
+	public boolean enableChannel(ChannelBean portForward) {
 		if (!transport.isConnected()) {
 			Log.i(TAG, "Attempt to enable port forward while not connected");
 			return false;
 		}
 
-		return transport.enablePortForward(portForward);
+		return transport.enableChannel(portForward);
 	}
 
 	/**
@@ -876,13 +874,13 @@ public class TerminalBridge implements VDUDisplay {
 	 * @param portForward member of our current port forwards list to enable
 	 * @return true on successful port forward tear-down
 	 */
-	public boolean disablePortForward(PortForwardBean portForward) {
+	public boolean disableChannel(ChannelBean portForward) {
 		if (!transport.isConnected()) {
 			Log.i(TAG, "Attempt to disable port forward while not connected");
 			return false;
 		}
 
-		return transport.disablePortForward(portForward);
+		return transport.disableChannel(portForward);
 	}
 
 	/**

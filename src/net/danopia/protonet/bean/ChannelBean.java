@@ -18,7 +18,6 @@
 package net.danopia.protonet.bean;
 
 import net.danopia.protonet.util.HostDatabase;
-
 import android.content.ContentValues;
 
 
@@ -26,15 +25,14 @@ import android.content.ContentValues;
  * @author Kenny Root
  *
  */
-public class PortForwardBean extends AbstractBean {
-	public static final String BEAN_NAME = "portforward";
+public class ChannelBean extends AbstractBean {
+	public static final String BEAN_NAME = "channel";
 
 	/* Database fields */
 	private long id = -1;
 	private long hostId = -1;
 	private String nickname = null;
-	private String type = null;
-	private int sourcePort = -1;
+	private String uuid = null;
 	private String destAddr = null;
 	private int destPort = -1;
 
@@ -50,12 +48,11 @@ public class PortForwardBean extends AbstractBean {
 	 * @param destAddr Destination hostname or IP address
 	 * @param destPort Destination port number
 	 */
-	public PortForwardBean(long id, long hostId, String nickname, String type, int sourcePort, String destAddr, int destPort) {
+	public ChannelBean(long id, long hostId, String nickname, String uuid, String destAddr, int destPort) {
 		this.id = id;
 		this.hostId = hostId;
 		this.nickname = nickname;
-		this.type = type;
-		this.sourcePort = sourcePort;
+		this.uuid = uuid;
 		this.destAddr = destAddr;
 		this.destPort = destPort;
 	}
@@ -65,15 +62,13 @@ public class PortForwardBean extends AbstractBean {
 	 * @param source Source port number
 	 * @param dest Destination is "host:port" format
 	 */
-	public PortForwardBean(long hostId, String nickname, String type, String source, String dest) {
+	public ChannelBean(long hostId, String nickname, String uuid) {
 		this.hostId = hostId;
 		this.nickname = nickname;
-		this.type = type;
-		this.sourcePort = Integer.parseInt(source);
-
-		setDest(dest);
+		this.uuid = uuid;
 	}
 
+	@Override
 	public String getBeanName() {
 		return BEAN_NAME;
 	}
@@ -109,29 +104,15 @@ public class PortForwardBean extends AbstractBean {
 	/**
 	 * @param type the type to set
 	 */
-	public void setType(String type) {
-		this.type = type;
+	public void setUuid(String uuid) {
+		this.uuid = uuid;
 	}
 
 	/**
 	 * @return the type
 	 */
-	public String getType() {
-		return type;
-	}
-
-	/**
-	 * @param sourcePort the sourcePort to set
-	 */
-	public void setSourcePort(int sourcePort) {
-		this.sourcePort = sourcePort;
-	}
-
-	/**
-	 * @return the sourcePort
-	 */
-	public int getSourcePort() {
-		return sourcePort;
+	public String getUuid() {
+		return uuid;
 	}
 
 	/**
@@ -204,35 +185,21 @@ public class PortForwardBean extends AbstractBean {
 	 * @return human readable description of the port forward
 	 */
 	public CharSequence getDescription() {
-		String description = "Unknown type";
-
-		if (HostDatabase.PORTFORWARD_LOCAL.equals(type)) {
-			description = String.format("Local port %d to %s:%d", sourcePort, destAddr, destPort);
-		} else if (HostDatabase.PORTFORWARD_REMOTE.equals(type)) {
-			description = String.format("Remote port %d to %s:%d", sourcePort, destAddr, destPort);
-/* I don't think we need the SOCKS4 type.
-		} else if (HostDatabase.PORTFORWARD_DYNAMIC4.equals(type)) {
-			description = String.format("Dynamic port %d (SOCKS4)", sourcePort);
-*/
-		} else if (HostDatabase.PORTFORWARD_DYNAMIC5.equals(type)) {
-			description = String.format("Dynamic port %d (SOCKS)", sourcePort);
-		}
-
-		return description;
+		return nickname;
 	}
 
 	/**
 	 * @return
 	 */
+	@Override
 	public ContentValues getValues() {
 		ContentValues values = new ContentValues();
 
-		values.put(HostDatabase.FIELD_PORTFORWARD_HOSTID, hostId);
-		values.put(HostDatabase.FIELD_PORTFORWARD_NICKNAME, nickname);
-		values.put(HostDatabase.FIELD_PORTFORWARD_TYPE, type);
-		values.put(HostDatabase.FIELD_PORTFORWARD_SOURCEPORT, sourcePort);
-		values.put(HostDatabase.FIELD_PORTFORWARD_DESTADDR, destAddr);
-		values.put(HostDatabase.FIELD_PORTFORWARD_DESTPORT, destPort);
+		values.put(HostDatabase.FIELD_CHANNEL_HOSTID, hostId);
+		values.put(HostDatabase.FIELD_CHANNEL_NICKNAME, nickname);
+		values.put(HostDatabase.FIELD_CHANNEL_UUID, uuid);
+		values.put(HostDatabase.FIELD_CHANNEL_DESTADDR, destAddr);
+		values.put(HostDatabase.FIELD_CHANNEL_DESTPORT, destPort);
 
 		return values;
 	}

@@ -355,7 +355,7 @@ public class HostListActivity extends ListActivity {
 		MenuItem portForwards = menu.add(R.string.list_host_portforwards);
 		portForwards.setOnMenuItemClickListener(new OnMenuItemClickListener() {
 			public boolean onMenuItemClick(MenuItem item) {
-				Intent intent = new Intent(HostListActivity.this, PortForwardListActivity.class);
+				Intent intent = new Intent(HostListActivity.this, ChannelListActivity.class);
 				intent.putExtra(Intent.EXTRA_TITLE, host.getId());
 				HostListActivity.this.startActivityForResult(intent, REQUEST_EDIT);
 				return true;

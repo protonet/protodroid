@@ -21,11 +21,10 @@ import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 
+import net.danopia.protonet.bean.ChannelBean;
 import net.danopia.protonet.bean.HostBean;
-import net.danopia.protonet.bean.PortForwardBean;
 import net.danopia.protonet.service.TerminalBridge;
 import net.danopia.protonet.service.TerminalManager;
-
 import android.content.Context;
 import android.net.Uri;
 
@@ -160,7 +159,7 @@ public abstract class AbsTransport {
 	 * Whether or not this transport type can forward ports.
 	 * @return true on ability to forward ports
 	 */
-	public boolean canForwardPorts() {
+	public boolean canChannels() {
 		return false;
 	}
 
@@ -169,7 +168,7 @@ public abstract class AbsTransport {
 	 * @param portForward the port forward bean to add
 	 * @return true on successful addition
 	 */
-	public boolean addPortForward(PortForwardBean portForward) {
+	public boolean addChannel(ChannelBean portForward) {
 		return false;
 	}
 
@@ -179,7 +178,7 @@ public abstract class AbsTransport {
 	 * @param portForward member of our current port forwards list to enable
 	 * @return true on successful port forward setup
 	 */
-	public boolean enablePortForward(PortForwardBean portForward) {
+	public boolean enableChannel(ChannelBean portForward) {
 		return false;
 	}
 
@@ -189,7 +188,7 @@ public abstract class AbsTransport {
 	 * @param portForward member of our current port forwards list to enable
 	 * @return true on successful port forward tear-down
 	 */
-	public boolean disablePortForward(PortForwardBean portForward) {
+	public boolean disableChannel(ChannelBean portForward) {
 		return false;
 	}
 
@@ -198,7 +197,7 @@ public abstract class AbsTransport {
 	 * @param portForward the port forward bean to remove
 	 * @return true on successful removal
 	 */
-	public boolean removePortForward(PortForwardBean portForward) {
+	public boolean removeChannel(ChannelBean portForward) {
 		return false;
 	}
 
@@ -206,7 +205,7 @@ public abstract class AbsTransport {
 	 * Gets a list of the {@link PortForwardBean} currently used by this transport.
 	 * @return the list of port forwards
 	 */
-	public List<PortForwardBean> getPortForwards() {
+	public List<ChannelBean> getChannels() {
 		return null;
 	}
 

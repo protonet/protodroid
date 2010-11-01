@@ -24,9 +24,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
+import net.danopia.protonet.bean.ChannelBean;
 import net.danopia.protonet.bean.HostBean;
-import net.danopia.protonet.bean.PortForwardBean;
-
 import android.content.ContentValues;
 import android.content.Context;
 import android.database.Cursor;
@@ -70,13 +69,12 @@ public class HostDatabase extends RobustSQLiteOpenHelper {
 	public final static String FIELD_HOST_ENCODING = "encoding";
 	public final static String FIELD_HOST_STAYCONNECTED = "stayconnected";
 
-	public final static String TABLE_PORTFORWARDS = "portforwards";
-	public final static String FIELD_PORTFORWARD_HOSTID = "hostid";
-	public final static String FIELD_PORTFORWARD_NICKNAME = "nickname";
-	public final static String FIELD_PORTFORWARD_TYPE = "type";
-	public final static String FIELD_PORTFORWARD_SOURCEPORT = "sourceport";
-	public final static String FIELD_PORTFORWARD_DESTADDR = "destaddr";
-	public final static String FIELD_PORTFORWARD_DESTPORT = "destport";
+	public final static String TABLE_CHANNELS = "portforwards";
+	public final static String FIELD_CHANNEL_HOSTID = "hostid";
+	public final static String FIELD_CHANNEL_NICKNAME = "nickname";
+	public final static String FIELD_CHANNEL_UUID = "uuid";
+	public final static String FIELD_CHANNEL_DESTADDR = "destaddr";
+	public final static String FIELD_CHANNEL_DESTPORT = "destport";
 
 	public final static String TABLE_COLORS = "colors";
 	public final static String FIELD_COLOR_SCHEME = "scheme";
@@ -94,11 +92,6 @@ public class HostDatabase extends RobustSQLiteOpenHelper {
 	public final static String COLOR_GREEN = "green";
 	public final static String COLOR_BLUE = "blue";
 	public final static String COLOR_GRAY = "gray";
-
-	public final static String PORTFORWARD_LOCAL = "local";
-	public final static String PORTFORWARD_REMOTE = "remote";
-	public final static String PORTFORWARD_DYNAMIC4 = "dynamic4";
-	public final static String PORTFORWARD_DYNAMIC5 = "dynamic5";
 
 	public final static String DELKEY_DEL = "del";
 	public final static String DELKEY_BACKSPACE = "backspace";
@@ -126,8 +119,8 @@ public class HostDatabase extends RobustSQLiteOpenHelper {
 
 	static {
 		addTableName(TABLE_HOSTS);
-		addTableName(TABLE_PORTFORWARDS);
-		addIndexName(TABLE_PORTFORWARDS + FIELD_PORTFORWARD_HOSTID + "index");
+		addTableName(TABLE_CHANNELS);
+		addIndexName(TABLE_CHANNELS + FIELD_CHANNEL_HOSTID + "index");
 		addTableName(TABLE_COLORS);
 		addIndexName(TABLE_COLORS + FIELD_COLOR_SCHEME + "index");
 		addTableName(TABLE_COLOR_DEFAULTS);
@@ -168,17 +161,16 @@ public class HostDatabase extends RobustSQLiteOpenHelper {
 				+ FIELD_HOST_ENCODING + " TEXT DEFAULT '" + ENCODING_DEFAULT + "', "
 				+ FIELD_HOST_STAYCONNECTED + " TEXT)");
 
-		db.execSQL("CREATE TABLE " + TABLE_PORTFORWARDS
+		db.execSQL("CREATE TABLE " + TABLE_CHANNELS
 				+ " (_id INTEGER PRIMARY KEY, "
-				+ FIELD_PORTFORWARD_HOSTID + " INTEGER, "
-				+ FIELD_PORTFORWARD_NICKNAME + " TEXT, "
-				+ FIELD_PORTFORWARD_TYPE + " TEXT NOT NULL DEFAULT " + PORTFORWARD_LOCAL + ", "
-				+ FIELD_PORTFORWARD_SOURCEPORT + " INTEGER NOT NULL DEFAULT 8080, "
-				+ FIELD_PORTFORWARD_DESTADDR + " TEXT, "
-				+ FIELD_PORTFORWARD_DESTPORT + " TEXT)");
+				+ FIELD_CHANNEL_HOSTID + " INTEGER, "
+				+ FIELD_CHANNEL_NICKNAME + " TEXT, "
+				+ FIELD_CHANNEL_UUID + " TEXT, "
+				+ FIELD_CHANNEL_DESTADDR + " TEXT, "
+				+ FIELD_CHANNEL_DESTPORT + " TEXT)");
 
-		db.execSQL("CREATE INDEX " + TABLE_PORTFORWARDS + FIELD_PORTFORWARD_HOSTID + "index ON "
-				+ TABLE_PORTFORWARDS + " (" + FIELD_PORTFORWARD_HOSTID + ");");
+		db.execSQL("CREATE INDEX " + TABLE_CHANNELS + FIELD_CHANNEL_HOSTID + "index ON "
+				+ TABLE_CHANNELS + " (" + FIELD_CHANNEL_HOSTID + ");");
 
 		db.execSQL("CREATE TABLE " + TABLE_COLORS
 				+ " (_id INTEGER PRIMARY KEY, "
@@ -208,14 +200,13 @@ public class HostDatabase extends RobustSQLiteOpenHelper {
 			db.execSQL("ALTER TABLE " + TABLE_HOSTS
 					+ " ADD COLUMN " + FIELD_HOST_PUBKEYID + " INTEGER DEFAULT " + PUBKEYID_ANY);
 		case 11:
-			db.execSQL("CREATE TABLE " + TABLE_PORTFORWARDS
+			db.execSQL("CREATE TABLE " + TABLE_CHANNELS
 					+ " (_id INTEGER PRIMARY KEY, "
-					+ FIELD_PORTFORWARD_HOSTID + " INTEGER, "
-					+ FIELD_PORTFORWARD_NICKNAME + " TEXT, "
-					+ FIELD_PORTFORWARD_TYPE + " TEXT NOT NULL DEFAULT " + PORTFORWARD_LOCAL + ", "
-					+ FIELD_PORTFORWARD_SOURCEPORT + " INTEGER NOT NULL DEFAULT 8080, "
-					+ FIELD_PORTFORWARD_DESTADDR + " TEXT, "
-					+ FIELD_PORTFORWARD_DESTPORT + " INTEGER)");
+					+ FIELD_CHANNEL_HOSTID + " INTEGER, "
+					+ FIELD_CHANNEL_NICKNAME + " TEXT, "
+					+ FIELD_CHANNEL_UUID + " TEXT, "
+					+ FIELD_CHANNEL_DESTADDR + " TEXT, "
+					+ FIELD_CHANNEL_DESTPORT + " INTEGER)");
 		case 12:
 			db.execSQL("ALTER TABLE " + TABLE_HOSTS
 					+ " ADD COLUMN " + FIELD_HOST_WANTSESSION + " TEXT DEFAULT '" + Boolean.toString(true) + "'");
@@ -232,8 +223,8 @@ public class HostDatabase extends RobustSQLiteOpenHelper {
 			db.execSQL("ALTER TABLE " + TABLE_HOSTS
 					+ " ADD COLUMN " + FIELD_HOST_DELKEY + " TEXT DEFAULT '" + DELKEY_DEL + "'");
 		case 17:
-			db.execSQL("CREATE INDEX " + TABLE_PORTFORWARDS + FIELD_PORTFORWARD_HOSTID + "index ON "
-					+ TABLE_PORTFORWARDS + " (" + FIELD_PORTFORWARD_HOSTID + ");");
+			db.execSQL("CREATE INDEX " + TABLE_CHANNELS + FIELD_CHANNEL_HOSTID + "index ON "
+					+ TABLE_CHANNELS + " (" + FIELD_CHANNEL_HOSTID + ");");
 
 			// Add colors
 			db.execSQL("CREATE TABLE " + TABLE_COLORS
@@ -575,61 +566,60 @@ public class HostDatabase extends RobustSQLiteOpenHelper {
 	}
 
 	/*
-	 * Methods for dealing with port forwards attached to hosts
+	 * Methods for dealing with channels  attached to hosts
 	 */
 
 	/**
-	 * Returns a list of all the port forwards associated with a particular host ID.
+	 * Returns a list of all the channels associated with a particular host ID.
 	 * @param host the host for which we want the port forward list
 	 * @return port forwards associated with host ID
 	 */
-	public List<PortForwardBean> getPortForwardsForHost(HostBean host) {
-		List<PortForwardBean> portForwards = new LinkedList<PortForwardBean>();
+	public List<ChannelBean> getChannelsForHost(HostBean host) {
+		List<ChannelBean> channels = new LinkedList<ChannelBean>();
 
 		synchronized (dbLock) {
 			SQLiteDatabase db = this.getReadableDatabase();
 
-			Cursor c = db.query(TABLE_PORTFORWARDS, new String[] {
-					"_id", FIELD_PORTFORWARD_NICKNAME, FIELD_PORTFORWARD_TYPE, FIELD_PORTFORWARD_SOURCEPORT,
-					FIELD_PORTFORWARD_DESTADDR, FIELD_PORTFORWARD_DESTPORT },
-					FIELD_PORTFORWARD_HOSTID + " = ?", new String[] { String.valueOf(host.getId()) },
+			Cursor c = db.query(TABLE_CHANNELS, new String[] {
+					"_id", FIELD_CHANNEL_NICKNAME, FIELD_CHANNEL_UUID,
+					FIELD_CHANNEL_DESTADDR, FIELD_CHANNEL_DESTPORT },
+					FIELD_CHANNEL_HOSTID + " = ?", new String[] { String.valueOf(host.getId()) },
 					null, null, null);
 
 			while (c.moveToNext()) {
-				PortForwardBean pfb = new PortForwardBean(
+				ChannelBean pfb = new ChannelBean(
 					c.getInt(0),
 					host.getId(),
 					c.getString(1),
 					c.getString(2),
-					c.getInt(3),
-					c.getString(4),
-					c.getInt(5));
-				portForwards.add(pfb);
+					c.getString(3),
+					c.getInt(4));
+				channels.add(pfb);
 			}
 
 			c.close();
 		}
 
-		return portForwards;
+		return channels;
 	}
 
 	/**
-	 * Update the parameters of a port forward in the database.
-	 * @param pfb {@link PortForwardBean} to save
+	 * Update the parameters of a channel in the database.
+	 * @param pfb {@link ChannelBean} to save
 	 * @return true on success
 	 */
-	public boolean savePortForward(PortForwardBean pfb) {
+	public boolean saveChannel(ChannelBean pfb) {
 		boolean success = false;
 
 		synchronized (dbLock) {
 			SQLiteDatabase db = getWritableDatabase();
 
 			if (pfb.getId() < 0) {
-				long id = db.insert(TABLE_PORTFORWARDS, null, pfb.getValues());
+				long id = db.insert(TABLE_CHANNELS, null, pfb.getValues());
 				pfb.setId(id);
 				success = true;
 			} else {
-				if (db.update(TABLE_PORTFORWARDS, pfb.getValues(), "_id = ?", new String[] { String.valueOf(pfb.getId()) }) > 0)
+				if (db.update(TABLE_CHANNELS, pfb.getValues(), "_id = ?", new String[] { String.valueOf(pfb.getId()) }) > 0)
 					success = true;
 			}
 		}
@@ -638,16 +628,16 @@ public class HostDatabase extends RobustSQLiteOpenHelper {
 	}
 
 	/**
-	 * Deletes a port forward from the database.
-	 * @param pfb {@link PortForwardBean} to delete
+	 * Deletes a channel from the database.
+	 * @param pfb {@link ChannelBean} to delete
 	 */
-	public void deletePortForward(PortForwardBean pfb) {
+	public void deleteChannel(ChannelBean pfb) {
 		if (pfb.getId() < 0)
 			return;
 
 		synchronized (dbLock) {
 			SQLiteDatabase db = this.getWritableDatabase();
-			db.delete(TABLE_PORTFORWARDS, "_id = ?", new String[] { String.valueOf(pfb.getId()) });
+			db.delete(TABLE_CHANNELS, "_id = ?", new String[] { String.valueOf(pfb.getId()) });
 		}
 	}
 

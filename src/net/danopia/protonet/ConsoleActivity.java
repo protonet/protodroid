@@ -26,8 +26,6 @@ import net.danopia.protonet.service.TerminalBridge;
 import net.danopia.protonet.service.TerminalKeyListener;
 import net.danopia.protonet.service.TerminalManager;
 import net.danopia.protonet.util.PreferenceConstants;
-
-
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.app.Dialog;
@@ -609,13 +607,13 @@ public class ConsoleActivity extends Activity {
 		final boolean activeTerminal = (view instanceof TerminalView);
 		boolean sessionOpen = false;
 		boolean disconnected = false;
-		boolean canForwardPorts = false;
+		boolean canChannels = false;
 
 		if (activeTerminal) {
 			TerminalBridge bridge = ((TerminalView) view).bridge;
 			sessionOpen = bridge.isSessionOpen();
 			disconnected = bridge.isDisconnected();
-			canForwardPorts = bridge.canFowardPorts();
+			canChannels = bridge.canChannels();
 		}
 
 		menu.setQwertyMode(true);
@@ -682,13 +680,13 @@ public class ConsoleActivity extends Activity {
 		portForward = menu.add(R.string.console_menu_portforwards);
 		portForward.setAlphabeticShortcut('f');
 		portForward.setIcon(android.R.drawable.ic_menu_manage);
-		portForward.setEnabled(sessionOpen && canForwardPorts);
+		portForward.setEnabled(sessionOpen && canChannels);
 		portForward.setOnMenuItemClickListener(new OnMenuItemClickListener() {
 			public boolean onMenuItemClick(MenuItem item) {
 				TerminalView terminalView = (TerminalView) findCurrentView(R.id.console_flip);
 				TerminalBridge bridge = terminalView.bridge;
 
-				Intent intent = new Intent(ConsoleActivity.this, PortForwardListActivity.class);
+				Intent intent = new Intent(ConsoleActivity.this, ChannelListActivity.class);
 				intent.putExtra(Intent.EXTRA_TITLE, bridge.host.getId());
 				ConsoleActivity.this.startActivityForResult(intent, REQUEST_EDIT);
 				return true;
@@ -774,7 +772,7 @@ public class ConsoleActivity extends Activity {
 			TerminalBridge bridge = ((TerminalView) view).bridge;
 			sessionOpen = bridge.isSessionOpen();
 			disconnected = bridge.isDisconnected();
-			canForwardPorts = bridge.canFowardPorts();
+			canForwardPorts = bridge.canChannels();
 		}
 
 		disconnect.setEnabled(activeTerminal);

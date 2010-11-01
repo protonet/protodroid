@@ -26,8 +26,8 @@
 	<string name="title_hosts_list">"Hosts"</string>
 	<!-- Window title for the Pubkeys List -->
 	<string name="title_pubkey_list">"Pubkeys"</string>
-	<!-- Window title for the Port Forwards List -->
-	<string name="title_port_forwards_list">"Port forwards"</string>
+	<!-- Window title for the Channels List -->
+	<string name="title_port_forwards_list">"Channels"</string>
 	<!-- Window title when editing host details -->
 	<string name="title_host_editor">"Edit Host"</string>
 	<!-- Window title for Help index -->
@@ -71,24 +71,20 @@
 	<!-- Pubkey preference asking user whether the key use should be confirmed via prompt before it can be used for authentication -->
 	<string name="pubkey_confirm_use">"Confirm before use"</string>
 
-	<!-- Note that the '\n' splits lines, so it's actually "create port forwards" -->
-	<string name="portforward_list_empty">"Tap \"Menu\" to create"\n"port forwards."</string>
-	<string name="portforward_edit">"Edit port forward"</string>
-	<string name="portforward_delete">"Delete port forward"</string>
+	<!-- Note that the '\n' splits lines, so it's actually "create channels" -->
+	<string name="channel_list_empty">"Tap \"Menu\" to create"\n"channels."</string>
+	<string name="channel_edit">"Edit channel"</string>
+	<string name="channel_delete">"Delete channel"</string>
 
 	<string name="prompt_nickname">"Nickname:"</string>
 	<!-- An example string that could be used as a nickname for a pubkey. -->
 	<string name="prompt_nickname_hint_pubkey">"My work key"</string>
-	<!-- The source TCP port for port forwards. -->
-	<string name="prompt_source_port">"Source port:"</string>
-	<!-- The "host:port" combination used for port forward destinations. -->
-	<string name="prompt_destination">"Destination:"</string>
+	<!-- The UUID for channels. -->
+	<string name="prompt_uuid">"UUID:"</string>
 	<string name="prompt_old_password">"Old password:"</string>
 	<string name="prompt_password">"Password:"</string>
 	<!-- Added after a "Password:" prompt to indicate user needs to confirm entry. -->
 	<string name="prompt_again">"(again)"</string>
-	<!-- Label for the user to select port forward type. -->
-	<string name="prompt_type">"Type:"</string>
 	<string name="prompt_password_can_be_blank">"Note: password can be blank"</string>
 	<!-- Prompt for the size of the private key in bits. -->
 	<string name="prompt_bits">"Bits:"</string>
@@ -311,8 +307,8 @@
 	<string name="console_menu_copy">"Copy"</string>
 	<!-- Button to paste from the clipboard to the terminal. -->
 	<string name="console_menu_paste">"Paste"</string>
-	<!-- Button that brings user to the Port Forwards List. -->
-	<string name="console_menu_portforwards">"Port Forwards"</string>
+	<!-- Button that brings user to the Channels List. -->
+	<string name="console_menu_portforwards">"Channels"</string>
 	<!-- Button that brings user to the terminal resizing dialog where they can force a size. -->
 	<string name="console_menu_resize">"Force Size"</string>
 	<!-- Button that brings up the list of URLs on the current screen -->
@@ -322,20 +318,13 @@
 	<string name="button_yes">"Yes"</string>
 	<!-- Button label to answer "No" to a yes/no prompt -->
 	<string name="button_no">"No"</string>
+	<!-- Button that commits the channel to be made from the Channel Creation dialog. -->
+	<string name="channel_pos">"Create channel"</string>
 
-	<!-- Selection for a "local" port forward. E.g., connections to a port listening locally is forwarded to the remote end's listening port. -->
-	<string name="portforward_local">"Local"</string>
-	<!-- Selection for a "remote" port forward. E.g., connections to a port listening remotely is forwarded to the local end's listening port. -->
-	<string name="portforward_remote">"Remote"</string>
-	<!-- Selection for a "dynamic" port forward. E.g., connections to a port listening locally is forwarded based on the SOCKS protocol to an arbitrary remote host and port. -->
-	<string name="portforward_dynamic">"Dynamic (SOCKS)"</string>
-	<!-- Button that commits the port forward to be made from the Port Forward Creation dialog. -->
-	<string name="portforward_pos">"Create port forward"</string>
+	<string name="channel_done">"Successfully created channel"</string>
+	<string name="channel_problem">"Problem creating channel, maybe the name or UUID is already used?"</string>
 
-	<string name="portforward_done">"Successfully created port forward"</string>
-	<string name="portforward_problem">"Problem creating port forward, maybe you're using ports under 1024 or port is already used?"</string>
-
-	<string name="portforward_menu_add">"Add port forward"</string>
+	<string name="channel_menu_add">"Add channel"</string>
 
 	<!-- The string to present in the quick-connect box to hint the user to the format for connecting to hosts. -->
 	<string name="hint_userhost">"user@hostname"</string>
@@ -359,7 +348,7 @@
 
 	<string name="list_host_disconnect">"Disconnect"</string>
 	<string name="list_host_edit">"Edit host"</string>
-	<string name="list_host_portforwards">"Edit port forwards"</string>
+	<string name="list_host_channels">"Edit channels"</string>
 	<string name="list_host_delete">"Delete host"</string>
 	<!-- Note that the '\n' splits the lines so it's actually "quick-connect box below to connect" -->
 	<string name="list_host_empty">"Use the quick-connect box"\n"below to connect to a host."</string>
@@ -431,7 +420,7 @@
 	<string name="terminal_auth_fail">"[Your host doesn't support 'password' or 'keyboard-interactive' authentication.]"</string>
 
 	<string name="terminal_no_session">"Session will not be started due to host preference."</string>
-	<string name="terminal_enable_portfoward">"Enable port forward: %1$s"</string>
+	<string name="terminal_enable_channel">"Enable channel: %1$s"</string>
 
 	<string name="local_shell_unavailable">"Failure! Local shell is unavailable on this phone."</string>
 
@@ -459,7 +448,7 @@
 	<string name="menu_colors_reset">"Reset"</string>
 
 	<!-- Displayed in the notification bar that connections are active -->
-	<string name="app_is_running">"ConnectBot is running"</string>
+	<string name="app_is_running">"Protonet is running"</string>
 
 	<string name="color_red">"red"</string>
 	<string name="color_green">"green"</string>

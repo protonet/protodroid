@@ -20,8 +20,6 @@ package net.danopia.protonet.transport;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.net.InetAddress;
-import java.net.InetSocketAddress;
 import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
 import java.security.PublicKey;
@@ -36,8 +34,8 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import net.danopia.protonet.R;
+import net.danopia.protonet.bean.ChannelBean;
 import net.danopia.protonet.bean.HostBean;
-import net.danopia.protonet.bean.PortForwardBean;
 import net.danopia.protonet.bean.PubkeyBean;
 import net.danopia.protonet.service.TerminalBridge;
 import net.danopia.protonet.service.TerminalManager;
@@ -45,8 +43,6 @@ import net.danopia.protonet.service.TerminalManager.KeyHolder;
 import net.danopia.protonet.util.HostDatabase;
 import net.danopia.protonet.util.PubkeyDatabase;
 import net.danopia.protonet.util.PubkeyUtils;
-
-
 import android.content.Context;
 import android.net.Uri;
 import android.util.Log;
@@ -56,10 +52,8 @@ import com.trilead.ssh2.ChannelCondition;
 import com.trilead.ssh2.Connection;
 import com.trilead.ssh2.ConnectionInfo;
 import com.trilead.ssh2.ConnectionMonitor;
-import com.trilead.ssh2.DynamicPortForwarder;
 import com.trilead.ssh2.InteractiveCallback;
 import com.trilead.ssh2.KnownHosts;
-import com.trilead.ssh2.LocalPortForwarder;
 import com.trilead.ssh2.ServerHostKeyVerifier;
 import com.trilead.ssh2.Session;
 import com.trilead.ssh2.crypto.PEMDecoder;
@@ -123,7 +117,7 @@ public class SSH extends AbsTransport implements ConnectionMonitor, InteractiveC
 		| ChannelCondition.CLOSED
 		| ChannelCondition.EOF;
 
-	private List<PortForwardBean> portForwards = new LinkedList<PortForwardBean>();
+	private List<ChannelBean> channels = new LinkedList<ChannelBean>();
 
 	private int columns;
 	private int rows;
@@ -365,9 +359,9 @@ public class SSH extends AbsTransport implements ConnectionMonitor, InteractiveC
 	private void finishConnection() {
 		authenticated = true;
 
-		for (PortForwardBean portForward : portForwards) {
+		for (ChannelBean portForward : channels) {
 			try {
-				enablePortForward(portForward);
+				enableChannel(portForward);
 				bridge.outputLine(manager.res.getString(R.string.terminal_enable_portfoward, portForward.getDescription()));
 			} catch (Exception e) {
 				Log.e(TAG, "Error setting up port forward during connect", e);
@@ -571,31 +565,31 @@ public class SSH extends AbsTransport implements ConnectionMonitor, InteractiveC
 	}
 
 	@Override
-	public boolean canForwardPorts() {
+	public boolean canChannels() {
 		return true;
 	}
 
 	@Override
-	public List<PortForwardBean> getPortForwards() {
-		return portForwards;
+	public List<ChannelBean> getChannels() {
+		return channels;
 	}
 
 	@Override
-	public boolean addPortForward(PortForwardBean portForward) {
-		return portForwards.add(portForward);
+	public boolean addChannel(ChannelBean portForward) {
+		return channels.add(portForward);
 	}
 
 	@Override
-	public boolean removePortForward(PortForwardBean portForward) {
+	public boolean removeChannel(ChannelBean portForward) {
 		// Make sure we don't have a phantom forwarder.
-		disablePortForward(portForward);
+		disableChannel(portForward);
 
-		return portForwards.remove(portForward);
+		return channels.remove(portForward);
 	}
 
 	@Override
-	public boolean enablePortForward(PortForwardBean portForward) {
-		if (!portForwards.contains(portForward)) {
+	public boolean enableChannel(ChannelBean portForward) {
+		if (!channels.contains(portForward)) {
 			Log.e(TAG, "Attempt to enable port forward not in list");
 			return false;
 		}
@@ -603,6 +597,8 @@ public class SSH extends AbsTransport implements ConnectionMonitor, InteractiveC
 		if (!authenticated)
 			return false;
 
+		// TODO: Subscribe to channel (if needed?)
+		/*
 		if (HostDatabase.PORTFORWARD_LOCAL.equals(portForward.getType())) {
 			LocalPortForwarder lpf = null;
 			try {
@@ -651,11 +647,13 @@ public class SSH extends AbsTransport implements ConnectionMonitor, InteractiveC
 			Log.e(TAG, String.format("attempt to forward unknown type %s", portForward.getType()));
 			return false;
 		}
+		*/
+		return true;
 	}
 
 	@Override
-	public boolean disablePortForward(PortForwardBean portForward) {
-		if (!portForwards.contains(portForward)) {
+	public boolean disableChannel(ChannelBean portForward) {
+		if (!channels.contains(portForward)) {
 			Log.e(TAG, "Attempt to disable port forward not in list");
 			return false;
 		}
@@ -663,6 +661,8 @@ public class SSH extends AbsTransport implements ConnectionMonitor, InteractiveC
 		if (!authenticated)
 			return false;
 
+		// TODO: Unsubscribe to channel (if needed?)
+		/*
 		if (HostDatabase.PORTFORWARD_LOCAL.equals(portForward.getType())) {
 			LocalPortForwarder lpf = null;
 			lpf = (LocalPortForwarder)portForward.getIdentifier();
@@ -717,6 +717,8 @@ public class SSH extends AbsTransport implements ConnectionMonitor, InteractiveC
 			Log.e(TAG, String.format("attempt to forward unknown type %s", portForward.getType()));
 			return false;
 		}
+		*/
+		return true;
 	}
 
 	@Override
