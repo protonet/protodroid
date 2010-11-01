@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-	package="org.connectbot"
-	android:versionName="1.7.1"
-	android:versionCode="334"
+	package="net.danopia.protonet"
+	android:versionName="0.0.1"
+	android:versionCode="1"
 	android:installLocation="auto">
 
 	<application
@@ -41,7 +41,7 @@
 		<activity android:name=".HelpTopicActivity" android:configChanges="keyboardHidden|orientation" />
 		<activity android:name=".ColorsActivity" android:configChanges="keyboardHidden|orientation" />
 
-		<service android:name="org.connectbot.service.TerminalManager"
+		<service android:name=".service.TerminalManager"
 			android:configChanges="keyboardHidden|orientation"
 			android:description="@string/service_desc" />
 

@@ -133,7 +133,7 @@
 			android:defaultValue="true"
 			/>
 
-		<org.connectbot.util.VolumePreference
+		<net.danopia.protonet.util.VolumePreference
 			android:key="bellVolume"
 			android:title="@string/pref_bell_volume_title"
 			/>

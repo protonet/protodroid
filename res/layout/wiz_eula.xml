@@ -35,7 +35,7 @@
 		<TextView
 			android:layout_width="fill_parent"
 			android:layout_height="wrap_content"
-			android:text="ConnectBot is a simple, powerful, open-source Secure Shell (SSH) client for your Android device."
+			android:text="Protonet is a simple, powerful, open-source protonet timeline client for your Android device."
 			android:textAppearance="?android:attr/textAppearanceMedium"
 			/>
 
@@ -43,7 +43,7 @@
 			android:layout_width="fill_parent"
 			android:layout_height="wrap_content"
 			android:paddingTop="10dip"
-			android:text="It can manage several SSH sessions, create secure tunnels, and copy/paste between other apps."
+			android:text="It can manage several timelines, publish files, and copy/paste between other apps."
 			android:textAppearance="?android:attr/textAppearanceMedium"
 			/>
 

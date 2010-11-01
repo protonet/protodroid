@@ -8,13 +8,14 @@ import java.io.FilenameFilter;
 import java.util.ArrayList;
 import java.util.List;
 
+import net.danopia.protonet.R;
+
 import org.apache.http.NameValuePair;
 import org.apache.http.client.entity.UrlEncodedFormEntity;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.impl.client.DefaultHttpClient;
 import org.apache.http.message.BasicNameValuePair;
 import org.apache.http.protocol.HTTP;
-import org.connectbot.R;
 
 import android.app.AlertDialog;
 import android.content.Context;
