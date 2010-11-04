@@ -362,7 +362,7 @@ public class SSH extends AbsTransport implements ConnectionMonitor, InteractiveC
 		for (ChannelBean portForward : channels) {
 			try {
 				enableChannel(portForward);
-				bridge.outputLine(manager.res.getString(R.string.terminal_enable_portfoward, portForward.getDescription()));
+				bridge.outputLine(manager.res.getString(R.string.terminal_enable_channel, portForward.getDescription()));
 			} catch (Exception e) {
 				Log.e(TAG, "Error setting up port forward during connect", e);
 			}

@@ -117,12 +117,6 @@
 		<item>yes</item>
 	</string-array>
 
-	<string-array name="list_portforward_types" translatable="false">
-		<item>@string/portforward_local</item>
-		<item>@string/portforward_remote</item>
-		<item>@string/portforward_dynamic</item>
-	</string-array>
-
 	<string-array name="list_wizard_topics" translatable="false">
 		<item>Hints</item>
 		<item>PhysicalKeyboard</item>
