@@ -21,8 +21,6 @@ import java.io.IOException;
 
 import net.danopia.protonet.util.HostDatabase;
 import net.danopia.protonet.util.PreferenceConstants;
-import net.danopia.protonet.util.PubkeyDatabase;
-
 import android.app.backup.BackupAgentHelper;
 import android.app.backup.BackupDataInput;
 import android.app.backup.BackupDataOutput;
@@ -45,10 +43,6 @@ public class BackupAgent extends BackupAgentHelper {
 
 		FileBackupHelper hosts = new FileBackupHelper(this, "../databases/" + HostDatabase.DB_NAME);
 		addHelper(HostDatabase.DB_NAME, hosts);
-
-		FileBackupHelper pubkeys = new FileBackupHelper(this, "../databases/" + PubkeyDatabase.DB_NAME);
-		addHelper(PubkeyDatabase.DB_NAME, pubkeys);
-
 	}
 
 	@Override

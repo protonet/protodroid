@@ -18,10 +18,8 @@
 package net.danopia.protonet;
 
 import net.danopia.protonet.bean.SelectionArea;
-import net.danopia.protonet.service.FontSizeChangedListener;
 import net.danopia.protonet.service.TerminalBridge;
 import net.danopia.protonet.service.TerminalKeyListener;
-
 import android.app.Activity;
 import android.content.Context;
 import android.graphics.Canvas;
@@ -46,7 +44,7 @@ import de.mud.terminal.VDUBuffer;
  *
  * @author jsharkey
  */
-public class TerminalView extends View implements FontSizeChangedListener {
+public class TerminalView extends View {
 
 	private final Context context;
 	public final TerminalBridge bridge;
@@ -109,8 +107,6 @@ public class TerminalView extends View implements FontSizeChangedListener {
 		tempDst = new RectF();
 		scaleMatrix = new Matrix();
 
-		bridge.addFontSizeChangedListener(this);
-
 		// connect our view up to the bridge
 		setOnKeyListener(bridge.getKeyHandler());
 	}
@@ -123,8 +119,6 @@ public class TerminalView extends View implements FontSizeChangedListener {
 	@Override
 	protected void onSizeChanged(int w, int h, int oldw, int oldh) {
 		super.onSizeChanged(w, h, oldw, oldh);
-
-		bridge.parentChanged(this);
 
 		scaleCursors();
 	}
@@ -236,15 +230,6 @@ public class TerminalView extends View implements FontSizeChangedListener {
 		}
 
 		lastNotification = message;
-	}
-
-	/**
-	 * Ask the {@link TerminalBridge} we're connected to to resize to a specific size.
-	 * @param width
-	 * @param height
-	 */
-	public void forceSize(int width, int height) {
-		bridge.resizeComputed(width, height, getWidth(), getHeight());
 	}
 
 	/**

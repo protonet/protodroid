@@ -36,21 +36,14 @@ public class TransportFactory {
 
 	private static String[] transportNames = {
 		SSH.getProtocolName(),
-		Telnet.getProtocolName(),
 	};
 
 	/**
 	 * @param protocol
 	 * @return
 	 */
-	public static AbsTransport getTransport(String protocol) {
-		if (SSH.getProtocolName().equals(protocol)) {
-			return new SSH();
-		} else if (Telnet.getProtocolName().equals(protocol)) {
-			return new Telnet();
-		} else {
-			return null;
-		}
+	public static AbsTransport getTransport() {
+		return new SSH();
 	}
 
 	public static Uri getUri(String scheme, String input) {
@@ -59,8 +52,6 @@ public class TransportFactory {
 				input));
 		if (SSH.getProtocolName().equals(scheme))
 			return SSH.getUri(input);
-		else if (Telnet.getProtocolName().equals(scheme))
-			return Telnet.getUri(input);
 		else
 			return null;
 	}
@@ -84,8 +75,6 @@ public class TransportFactory {
 	public static String getFormatHint(String protocol, Context context) {
 		if (SSH.getProtocolName().equals(protocol)) {
 			return SSH.getFormatHint(context);
-		} else if (Telnet.getProtocolName().equals(protocol)) {
-			return Telnet.getFormatHint(context);
 		} else {
 			return AbsTransport.getFormatHint(context);
 		}
@@ -98,7 +87,7 @@ public class TransportFactory {
 	 * @return true when host was found
 	 */
 	public static HostBean findHost(HostDatabase hostdb, Uri uri) {
-		AbsTransport transport = getTransport(uri.getScheme());
+		AbsTransport transport = getTransport();
 
 		Map<String, String> selection = new HashMap<String, String>();
 

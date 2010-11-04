@@ -21,7 +21,6 @@ import java.io.IOException;
 import net.danopia.protonet.TerminalView;
 import net.danopia.protonet.bean.SelectionArea;
 import net.danopia.protonet.util.PreferenceConstants;
-
 import android.content.SharedPreferences;
 import android.content.SharedPreferences.OnSharedPreferenceChangeListener;
 import android.content.res.Configuration;
@@ -147,11 +146,12 @@ public class TerminalKeyListener implements OnKeyListener, OnSharedPreferenceCha
 			}
 
 			// check for terminal resizing keys
+			// TODO: do something cool with this
 			if (keyCode == KeyEvent.KEYCODE_VOLUME_UP) {
-				bridge.increaseFontSize();
+				//bridge.increaseFontSize();
 				return true;
 			} else if(keyCode == KeyEvent.KEYCODE_VOLUME_DOWN) {
-				bridge.decreaseFontSize();
+				//bridge.decreaseFontSize();
 				return true;
 			}
 

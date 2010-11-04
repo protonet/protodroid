@@ -17,7 +17,7 @@
 
 package net.danopia.protonet.util;
 
-import com.trilead.ssh2.crypto.Base64;
+import android.util.Base64;
 
 /**
  * @author Kenny Root
@@ -51,20 +51,21 @@ public class XmlBuilder {
 			}
 
 			sb.append(String.format("<%s>%s</%s>", field,
-					binary ? new String(Base64.encode(input.getBytes())) : input, field));
+					binary ? new String(Base64.encode(input.getBytes(), Base64.DEFAULT)) : input, field));
 		} else if (data instanceof Integer) {
-			sb.append(String.format("<%s>%d</%s>", field, (Integer) data, field));
+			sb.append(String.format("<%s>%d</%s>", field, data, field));
 		} else if (data instanceof Long) {
-			sb.append(String.format("<%s>%d</%s>", field, (Long) data, field));
+			sb.append(String.format("<%s>%d</%s>", field, data, field));
 		} else if (data instanceof byte[]) {
-			sb.append(String.format("<%s>%s</%s>", field, new String(Base64.encode((byte[]) data)), field));
+			sb.append(String.format("<%s>%s</%s>", field, new String(Base64.encode((byte[]) data, Base64.DEFAULT)), field));
 		} else if (data instanceof Boolean) {
-			sb.append(String.format("<%s>%s</%s>", field, (Boolean) data, field));
+			sb.append(String.format("<%s>%s</%s>", field, data, field));
 		}
 
 		return this;
 	}
 
+	@Override
 	public String toString() {
 		return sb.toString();
 	}

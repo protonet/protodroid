@@ -18,7 +18,6 @@
 package net.danopia.protonet;
 
 import java.nio.charset.Charset;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -29,9 +28,6 @@ import net.danopia.protonet.bean.HostBean;
 import net.danopia.protonet.service.TerminalBridge;
 import net.danopia.protonet.service.TerminalManager;
 import net.danopia.protonet.util.HostDatabase;
-import net.danopia.protonet.util.PubkeyDatabase;
-
-
 import android.content.ComponentName;
 import android.content.ContentValues;
 import android.content.Context;
@@ -55,7 +51,6 @@ public class HostEditorActivity extends PreferenceActivity implements OnSharedPr
 		protected final long id;
 
 		protected Map<String, String> values = new HashMap<String, String>();
-//		protected Map<String, String> pubkeys = new HashMap<String, String>();
 
 		public CursorPreferenceHack(String table, long id) {
 			this.table = table;
@@ -75,29 +70,12 @@ public class HostEditorActivity extends PreferenceActivity implements OnSharedPr
 			if (cursor.moveToFirst()) {
 				for(int i = 0; i < cursor.getColumnCount(); i++) {
 					String key = cursor.getColumnName(i);
-					if(key.equals(HostDatabase.FIELD_HOST_HOSTKEY)) continue;
 					String value = cursor.getString(i);
 					values.put(key, value);
 				}
 			}
 			cursor.close();
 			db.close();
-
-//			db = pubkeydb.getReadableDatabase();
-//			cursor = db.query(PubkeyDatabase.TABLE_PUBKEYS,
-//					new String[] { "_id", PubkeyDatabase.FIELD_PUBKEY_NICKNAME },
-//					null, null, null, null, null);
-//
-//			if (cursor.moveToFirst()) {
-//				do {
-//					String pubkeyid = String.valueOf(cursor.getLong(0));
-//					String value = cursor.getString(1);
-//					pubkeys.put(pubkeyid, value);
-//				} while (cursor.moveToNext());
-//			}
-//
-//			cursor.close();
-//			db.close();
 		}
 
 		public boolean contains(String key) {
@@ -215,7 +193,6 @@ public class HostEditorActivity extends PreferenceActivity implements OnSharedPr
 	protected static final String TAG = "ConnectBot.HostEditorActivity";
 
 	protected HostDatabase hostdb = null;
-	private PubkeyDatabase pubkeydb = null;
 
 	private CursorPreferenceHack pref;
 	private ServiceConnection connection;
@@ -233,7 +210,6 @@ public class HostEditorActivity extends PreferenceActivity implements OnSharedPr
 		//this.getPreferenceManager().setSharedPreferencesName(uri);
 
 		this.hostdb = new HostDatabase(this);
-		this.pubkeydb = new PubkeyDatabase(this);
 
 		host = hostdb.findHostById(hostId);
 
@@ -253,19 +229,6 @@ public class HostEditorActivity extends PreferenceActivity implements OnSharedPr
 		this.pref.registerOnSharedPreferenceChangeListener(this);
 
 		this.addPreferencesFromResource(R.xml.host_prefs);
-
-		// add all existing pubkeys to our listpreference for user to choose from
-		// TODO: may be an issue here when this activity is recycled after adding a new pubkey
-		// TODO: should consider moving into onStart, but we dont have a good way of resetting the listpref after filling once
-		ListPreference pubkeyPref = (ListPreference)this.findPreference(HostDatabase.FIELD_HOST_PUBKEYID);
-
-		List<CharSequence> pubkeyNicks = new LinkedList<CharSequence>(Arrays.asList(pubkeyPref.getEntries()));
-		pubkeyNicks.addAll(pubkeydb.allValues(PubkeyDatabase.FIELD_PUBKEY_NICKNAME));
-		pubkeyPref.setEntries(pubkeyNicks.toArray(new CharSequence[pubkeyNicks.size()]));
-
-		List<CharSequence> pubkeyIds = new LinkedList<CharSequence>(Arrays.asList(pubkeyPref.getEntryValues()));
-		pubkeyIds.addAll(pubkeydb.allValues("_id"));
-		pubkeyPref.setEntryValues(pubkeyIds.toArray(new CharSequence[pubkeyIds.size()]));
 
 		// Populate the character set encoding list with all available
 		final ListPreference charsetPref = (ListPreference) findPreference(HostDatabase.FIELD_HOST_ENCODING);
@@ -296,9 +259,6 @@ public class HostEditorActivity extends PreferenceActivity implements OnSharedPr
 
 		if(this.hostdb == null)
 			this.hostdb = new HostDatabase(this);
-
-		if(this.pubkeydb == null)
-			this.pubkeydb = new PubkeyDatabase(this);
 	}
 
 	@Override
@@ -311,36 +271,17 @@ public class HostEditorActivity extends PreferenceActivity implements OnSharedPr
 			this.hostdb.close();
 			this.hostdb = null;
 		}
-
-		if(this.pubkeydb != null) {
-			this.pubkeydb.close();
-			this.pubkeydb = null;
-		}
 	}
 
 	private void updateSummaries() {
 		// for all text preferences, set hint as current database value
 		for (String key : this.pref.values.keySet()) {
-			if(key.equals(HostDatabase.FIELD_HOST_POSTLOGIN)) continue;
 			Preference pref = this.findPreference(key);
 			if(pref == null) continue;
 			if(pref instanceof CheckBoxPreference) continue;
 			CharSequence value = this.pref.getString(key, "");
 
-			if (key.equals(HostDatabase.FIELD_HOST_PUBKEYID)) {
-				try {
-					int pubkeyId = Integer.parseInt((String) value);
-					if (pubkeyId >= 0)
-						pref.setSummary(pubkeydb.getNickname(pubkeyId));
-					else if(pubkeyId == HostDatabase.PUBKEYID_ANY)
-						pref.setSummary(R.string.list_pubkeyids_any);
-					else if(pubkeyId == HostDatabase.PUBKEYID_NEVER)
-						pref.setSummary(R.string.list_pubkeyids_none);
-					continue;
-				} catch (NumberFormatException nfe) {
-					// Fall through.
-				}
-			} else if (pref instanceof ListPreference) {
+			if (pref instanceof ListPreference) {
 				ListPreference listPref = (ListPreference) pref;
 				int entryIndex = listPref.findIndexOfValue((String) value);
 				if (entryIndex >= 0)

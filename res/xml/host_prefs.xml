@@ -47,50 +47,10 @@
 		/>
 -->
 
-	<ListPreference
-		android:key="pubkeyid"
-		android:title="@string/hostpref_pubkeyid_title"
-		android:entries="@array/list_pubkeyids"
-		android:entryValues="@array/list_pubkeyids_value"
-		/>
-
-	<ListPreference
-		android:key="useauthagent"
-		android:title="@string/hostpref_authagent_title"
-		android:entries="@array/list_authagent"
-		android:entryValues="@array/list_authagent_values"
-		/>
-
-	<EditTextPreference
-		android:key="postlogin"
-		android:title="@string/hostpref_postlogin_title"
-		android:summary="@string/hostpref_postlogin_summary"
-		/>
-		
-	<CheckBoxPreference
-		android:key="compression"
-		android:title="@string/hostpref_compression_title"
-		android:summary="@string/hostpref_compression_summary"
-		/>
-		
-	<CheckBoxPreference
-		android:key="wantsession"
-		android:title="@string/hostpref_wantsession_title"
-		android:summary="@string/hostpref_wantsession_summary"
-		/>
-
 	<CheckBoxPreference
 		android:key="stayconnected"
 		android:title="@string/hostpref_stayconnected_title"
 		android:summary="@string/hostpref_stayconnected_summary"
-		/>
-
-	<ListPreference
-		android:key="delkey"
-		android:title="@string/hostpref_delkey_title"
-		android:summary="@string/hostpref_delkey_summary"
-		android:entries="@array/list_delkey"
-		android:entryValues="@array/list_delkey_values"
 		/>
 
 	<ListPreference

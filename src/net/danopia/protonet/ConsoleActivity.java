@@ -27,11 +27,9 @@ import net.danopia.protonet.service.TerminalKeyListener;
 import net.danopia.protonet.service.TerminalManager;
 import net.danopia.protonet.util.PreferenceConstants;
 import android.app.Activity;
-import android.app.AlertDialog;
 import android.app.Dialog;
 import android.content.ComponentName;
 import android.content.Context;
-import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.ServiceConnection;
 import android.content.SharedPreferences;
@@ -122,8 +120,6 @@ public class ConsoleActivity extends Activity {
 	protected TerminalBridge copySource = null;
 	private int lastTouchRow, lastTouchCol;
 
-	private boolean forcedOrientation;
-
 	private Handler handler = new Handler();
 
 	private ImageView mKeyboardButton;
@@ -136,8 +132,6 @@ public class ConsoleActivity extends Activity {
 			bound.disconnectHandler = disconnectHandler;
 
 			Log.d(TAG, String.format("Connected to TerminalManager and found bridges.size=%d", bound.bridges.size()));
-
-			bound.setResizeAllowed(true);
 
 			// clear out any existing bridges and record requested index
 			flip.removeAllViews();
@@ -539,8 +533,6 @@ public class ConsoleActivity extends Activity {
 					}
 				}
 
-				Configuration config = getResources().getConfiguration();
-
 				if (event.getAction() == MotionEvent.ACTION_DOWN) {
 					lastX = event.getX();
 					lastY = event.getY();
@@ -588,13 +580,10 @@ public class ConsoleActivity extends Activity {
 		// request a forced orientation if requested by user
 		if (PreferenceConstants.ROTATION_LANDSCAPE.equals(rotate)) {
 			setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE);
-			forcedOrientation = true;
 		} else if (PreferenceConstants.ROTATION_PORTRAIT.equals(rotate)) {
 			setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
-			forcedOrientation = true;
 		} else {
 			setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED);
-			forcedOrientation = false;
 		}
 	}
 
@@ -718,41 +707,6 @@ public class ConsoleActivity extends Activity {
 			}
 		});
 
-		resize = menu.add(R.string.console_menu_resize);
-		resize.setAlphabeticShortcut('s');
-		resize.setIcon(android.R.drawable.ic_menu_crop);
-		resize.setEnabled(sessionOpen);
-		resize.setOnMenuItemClickListener(new OnMenuItemClickListener() {
-			public boolean onMenuItemClick(MenuItem item) {
-				final TerminalView terminalView = (TerminalView) findCurrentView(R.id.console_flip);
-
-				final View resizeView = inflater.inflate(R.layout.dia_resize, null, false);
-				new AlertDialog.Builder(ConsoleActivity.this)
-					.setView(resizeView)
-					.setPositiveButton(R.string.button_resize, new DialogInterface.OnClickListener() {
-						public void onClick(DialogInterface dialog, int which) {
-							int width, height;
-							try {
-								width = Integer.parseInt(((EditText) resizeView
-										.findViewById(R.id.width))
-										.getText().toString());
-								height = Integer.parseInt(((EditText) resizeView
-										.findViewById(R.id.height))
-										.getText().toString());
-							} catch (NumberFormatException nfe) {
-								// TODO change this to a real dialog where we can
-								// make the input boxes turn red to indicate an error.
-								return;
-							}
-
-							terminalView.forceSize(width, height);
-						}
-					}).setNegativeButton(android.R.string.cancel, null).create().show();
-
-				return true;
-			}
-		});
-
 		return true;
 	}
 
@@ -809,9 +763,6 @@ public class ConsoleActivity extends Activity {
 	public void onPause() {
 		super.onPause();
 		Log.d(TAG, "onPause called");
-
-		if (forcedOrientation && bound != null)
-			bound.setResizeAllowed(false);
 	}
 
 	@Override
@@ -828,9 +779,6 @@ public class ConsoleActivity extends Activity {
 		}
 
 		configureOrientation();
-
-		if (forcedOrientation && bound != null)
-			bound.setResizeAllowed(true);
 	}
 
 	/* (non-Javadoc)
@@ -1020,15 +968,6 @@ public class ConsoleActivity extends Activity {
 
 		Log.d(TAG, String.format("onConfigurationChanged; requestedOrientation=%d, newConfig.orientation=%d", getRequestedOrientation(), newConfig.orientation));
 		if (bound != null) {
-			if (forcedOrientation &&
-					(newConfig.orientation != Configuration.ORIENTATION_LANDSCAPE &&
-					getRequestedOrientation() == ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE) ||
-					(newConfig.orientation != Configuration.ORIENTATION_PORTRAIT &&
-					getRequestedOrientation() == ActivityInfo.SCREEN_ORIENTATION_PORTRAIT))
-				bound.setResizeAllowed(false);
-			else
-				bound.setResizeAllowed(true);
-
 			bound.hardKeyboardHidden = (newConfig.hardKeyboardHidden == Configuration.HARDKEYBOARDHIDDEN_YES);
 
 			mKeyboardButton.setVisibility(bound.hardKeyboardHidden ? View.VISIBLE : View.GONE);

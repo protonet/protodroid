@@ -31,9 +31,6 @@ import android.content.Context;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteException;
-import android.util.Log;
-
-import com.trilead.ssh2.KnownHosts;
 
 /**
  * Contains information about various SSH hosts, include public hostkey if known
@@ -50,22 +47,13 @@ public class HostDatabase extends RobustSQLiteOpenHelper {
 
 	public final static String TABLE_HOSTS = "hosts";
 	public final static String FIELD_HOST_NICKNAME = "nickname";
-	public final static String FIELD_HOST_PROTOCOL = "protocol";
 	public final static String FIELD_HOST_USERNAME = "username";
 	public final static String FIELD_HOST_HOSTNAME = "hostname";
 	public final static String FIELD_HOST_PORT = "port";
-	public final static String FIELD_HOST_HOSTKEYALGO = "hostkeyalgo";
-	public final static String FIELD_HOST_HOSTKEY = "hostkey";
 	public final static String FIELD_HOST_LASTCONNECT = "lastconnect";
 	public final static String FIELD_HOST_COLOR = "color";
 	public final static String FIELD_HOST_USEKEYS = "usekeys";
-	public final static String FIELD_HOST_USEAUTHAGENT = "useauthagent";
-	public final static String FIELD_HOST_POSTLOGIN = "postlogin";
-	public final static String FIELD_HOST_PUBKEYID = "pubkeyid";
 	public final static String FIELD_HOST_WANTSESSION = "wantsession";
-	public final static String FIELD_HOST_DELKEY = "delkey";
-	public final static String FIELD_HOST_FONTSIZE = "fontsize";
-	public final static String FIELD_HOST_COMPRESSION = "compression";
 	public final static String FIELD_HOST_ENCODING = "encoding";
 	public final static String FIELD_HOST_STAYCONNECTED = "stayconnected";
 
@@ -93,17 +81,7 @@ public class HostDatabase extends RobustSQLiteOpenHelper {
 	public final static String COLOR_BLUE = "blue";
 	public final static String COLOR_GRAY = "gray";
 
-	public final static String DELKEY_DEL = "del";
-	public final static String DELKEY_BACKSPACE = "backspace";
-
-	public final static String AUTHAGENT_NO = "no";
-	public final static String AUTHAGENT_CONFIRM = "confirm";
-	public final static String AUTHAGENT_YES = "yes";
-
 	public final static String ENCODING_DEFAULT = Charset.defaultCharset().name();
-
-	public final static long PUBKEYID_NEVER = -2;
-	public final static long PUBKEYID_ANY = -1;
 
 	public static final int DEFAULT_COLOR_SCHEME = 0;
 
@@ -142,22 +120,13 @@ public class HostDatabase extends RobustSQLiteOpenHelper {
 		db.execSQL("CREATE TABLE " + TABLE_HOSTS
 				+ " (_id INTEGER PRIMARY KEY, "
 				+ FIELD_HOST_NICKNAME + " TEXT, "
-				+ FIELD_HOST_PROTOCOL + " TEXT DEFAULT 'ssh', "
 				+ FIELD_HOST_USERNAME + " TEXT, "
 				+ FIELD_HOST_HOSTNAME + " TEXT, "
 				+ FIELD_HOST_PORT + " INTEGER, "
-				+ FIELD_HOST_HOSTKEYALGO + " TEXT, "
-				+ FIELD_HOST_HOSTKEY + " BLOB, "
 				+ FIELD_HOST_LASTCONNECT + " INTEGER, "
 				+ FIELD_HOST_COLOR + " TEXT, "
 				+ FIELD_HOST_USEKEYS + " TEXT, "
-				+ FIELD_HOST_USEAUTHAGENT + " TEXT, "
-				+ FIELD_HOST_POSTLOGIN + " TEXT, "
-				+ FIELD_HOST_PUBKEYID + " INTEGER DEFAULT " + PUBKEYID_ANY + ", "
-				+ FIELD_HOST_DELKEY + " TEXT DEFAULT '" + DELKEY_DEL + "', "
-				+ FIELD_HOST_FONTSIZE + " INTEGER, "
 				+ FIELD_HOST_WANTSESSION + " TEXT DEFAULT '" + Boolean.toString(true) + "', "
-				+ FIELD_HOST_COMPRESSION + " TEXT DEFAULT '" + Boolean.toString(false) + "', "
 				+ FIELD_HOST_ENCODING + " TEXT DEFAULT '" + ENCODING_DEFAULT + "', "
 				+ FIELD_HOST_STAYCONNECTED + " TEXT)");
 
@@ -187,6 +156,9 @@ public class HostDatabase extends RobustSQLiteOpenHelper {
 
 	@Override
 	public void onRobustUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) throws SQLiteException {
+		// TODO: We put our OWN upgrades here, not ConnectBot's!
+
+		/*
 		// Versions of the database before the Android Market release will be
 		// shot without warning.
 		if (oldVersion <= 9) {
@@ -248,6 +220,7 @@ public class HostDatabase extends RobustSQLiteOpenHelper {
 			db.execSQL(CREATE_TABLE_COLOR_DEFAULTS);
 			db.execSQL(CREATE_TABLE_COLOR_DEFAULTS_INDEX);
 		}
+		*/
 	}
 
 	/**
@@ -282,28 +255,6 @@ public class HostDatabase extends RobustSQLiteOpenHelper {
 		host.setId(id);
 
 		return host;
-	}
-
-	/**
-	 * Update a field in a host record.
-	 */
-	public boolean updateFontSize(HostBean host) {
-		long id = host.getId();
-		if (id < 0)
-			return false;
-
-		ContentValues updates = new ContentValues();
-		updates.put(FIELD_HOST_FONTSIZE, host.getFontSize());
-
-		synchronized (dbLock) {
-			SQLiteDatabase db = getWritableDatabase();
-
-			db.update(TABLE_HOSTS, updates, "_id = ?",
-					new String[] { String.valueOf(id) });
-
-		}
-
-		return true;
 	}
 
 	/**
@@ -349,20 +300,13 @@ public class HostDatabase extends RobustSQLiteOpenHelper {
 
 		final int COL_ID = c.getColumnIndexOrThrow("_id"),
 			COL_NICKNAME = c.getColumnIndexOrThrow(FIELD_HOST_NICKNAME),
-			COL_PROTOCOL = c.getColumnIndexOrThrow(FIELD_HOST_PROTOCOL),
 			COL_USERNAME = c.getColumnIndexOrThrow(FIELD_HOST_USERNAME),
 			COL_HOSTNAME = c.getColumnIndexOrThrow(FIELD_HOST_HOSTNAME),
 			COL_PORT = c.getColumnIndexOrThrow(FIELD_HOST_PORT),
 			COL_LASTCONNECT = c.getColumnIndexOrThrow(FIELD_HOST_LASTCONNECT),
 			COL_COLOR = c.getColumnIndexOrThrow(FIELD_HOST_COLOR),
 			COL_USEKEYS = c.getColumnIndexOrThrow(FIELD_HOST_USEKEYS),
-			COL_USEAUTHAGENT = c.getColumnIndexOrThrow(FIELD_HOST_USEAUTHAGENT),
-			COL_POSTLOGIN = c.getColumnIndexOrThrow(FIELD_HOST_POSTLOGIN),
-			COL_PUBKEYID = c.getColumnIndexOrThrow(FIELD_HOST_PUBKEYID),
 			COL_WANTSESSION = c.getColumnIndexOrThrow(FIELD_HOST_WANTSESSION),
-			COL_DELKEY = c.getColumnIndexOrThrow(FIELD_HOST_DELKEY),
-			COL_FONTSIZE = c.getColumnIndexOrThrow(FIELD_HOST_FONTSIZE),
-			COL_COMPRESSION = c.getColumnIndexOrThrow(FIELD_HOST_COMPRESSION),
 			COL_ENCODING = c.getColumnIndexOrThrow(FIELD_HOST_ENCODING),
 			COL_STAYCONNECTED = c.getColumnIndexOrThrow(FIELD_HOST_STAYCONNECTED);
 
@@ -372,20 +316,13 @@ public class HostDatabase extends RobustSQLiteOpenHelper {
 
 			host.setId(c.getLong(COL_ID));
 			host.setNickname(c.getString(COL_NICKNAME));
-			host.setProtocol(c.getString(COL_PROTOCOL));
 			host.setUsername(c.getString(COL_USERNAME));
 			host.setHostname(c.getString(COL_HOSTNAME));
 			host.setPort(c.getInt(COL_PORT));
 			host.setLastConnect(c.getLong(COL_LASTCONNECT));
 			host.setColor(c.getString(COL_COLOR));
 			host.setUseKeys(Boolean.valueOf(c.getString(COL_USEKEYS)));
-			host.setUseAuthAgent(c.getString(COL_USEAUTHAGENT));
-			host.setPostLogin(c.getString(COL_POSTLOGIN));
-			host.setPubkeyId(c.getLong(COL_PUBKEYID));
 			host.setWantSession(Boolean.valueOf(c.getString(COL_WANTSESSION)));
-			host.setDelKey(c.getString(COL_DELKEY));
-			host.setFontSize(c.getInt(COL_FONTSIZE));
-			host.setCompression(Boolean.valueOf(c.getString(COL_COMPRESSION)));
 			host.setEncoding(c.getString(COL_ENCODING));
 			host.setStayConnected(Boolean.valueOf(c.getString(COL_STAYCONNECTED)));
 
@@ -482,17 +419,17 @@ public class HostDatabase extends RobustSQLiteOpenHelper {
 		return host;
 	}
 
-	/**
+	/*
+	 * TODO: Use this for i.e. updating node-specific info (auth, uuid)
+	 *
 	 * Record the given hostkey into database under this nickname.
 	 * @param hostname
 	 * @param port
 	 * @param hostkeyalgo
 	 * @param hostkey
-	 */
-	public void saveKnownHost(String hostname, int port, String hostkeyalgo, byte[] hostkey) {
+	 *
+	public void saveKnownHost(String hostname, int port) {
 		ContentValues values = new ContentValues();
-		values.put(FIELD_HOST_HOSTKEYALGO, hostkeyalgo);
-		values.put(FIELD_HOST_HOSTKEY, hostkey);
 
 		synchronized (dbLock) {
 			SQLiteDatabase db = getReadableDatabase();
@@ -503,70 +440,10 @@ public class HostDatabase extends RobustSQLiteOpenHelper {
 			Log.d(TAG, String.format("Finished saving hostkey information for '%s'", hostname));
 		}
 	}
-
-	/**
-	 * Build list of known hosts for Trilead library.
-	 * @return
-	 */
-	public KnownHosts getKnownHosts() {
-		KnownHosts known = new KnownHosts();
-
-		synchronized (dbLock) {
-			SQLiteDatabase db = this.getReadableDatabase();
-			Cursor c = db.query(TABLE_HOSTS, new String[] { FIELD_HOST_HOSTNAME,
-					FIELD_HOST_PORT, FIELD_HOST_HOSTKEYALGO, FIELD_HOST_HOSTKEY },
-					null, null, null, null, null);
-
-			if (c != null) {
-				int COL_HOSTNAME = c.getColumnIndexOrThrow(FIELD_HOST_HOSTNAME),
-					COL_PORT = c.getColumnIndexOrThrow(FIELD_HOST_PORT),
-					COL_HOSTKEYALGO = c.getColumnIndexOrThrow(FIELD_HOST_HOSTKEYALGO),
-					COL_HOSTKEY = c.getColumnIndexOrThrow(FIELD_HOST_HOSTKEY);
-
-				while (c.moveToNext()) {
-					String hostname = c.getString(COL_HOSTNAME),
-						hostkeyalgo = c.getString(COL_HOSTKEYALGO);
-					int port = c.getInt(COL_PORT);
-					byte[] hostkey = c.getBlob(COL_HOSTKEY);
-
-					if (hostkeyalgo == null || hostkeyalgo.length() == 0) continue;
-					if (hostkey == null || hostkey.length == 0) continue;
-
-					try {
-						known.addHostkey(new String[] { String.format("%s:%d", hostname, port) }, hostkeyalgo, hostkey);
-					} catch(Exception e) {
-						Log.e(TAG, "Problem while adding a known host from database", e);
-					}
-				}
-
-				c.close();
-			}
-		}
-
-		return known;
-	}
-
-	/**
-	 * Unset any hosts using a pubkey ID that has been deleted.
-	 * @param pubkeyId
-	 */
-	public void stopUsingPubkey(long pubkeyId) {
-		if (pubkeyId < 0) return;
-
-		ContentValues values = new ContentValues();
-		values.put(FIELD_HOST_PUBKEYID, PUBKEYID_ANY);
-
-		synchronized (dbLock) {
-			SQLiteDatabase db = this.getWritableDatabase();
-
-			db.update(TABLE_HOSTS, values, FIELD_HOST_PUBKEYID + " = ?", new String[] { String.valueOf(pubkeyId) });
-		}
-
-		Log.d(TAG, String.format("Set all hosts using pubkey id %d to -1", pubkeyId));
-	}
+	*/
 
 	/*
-	 * Methods for dealing with channels  attached to hosts
+	 * Methods for dealing with channels attached to hosts
 	 */
 
 	/**

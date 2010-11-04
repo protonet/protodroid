@@ -32,15 +32,10 @@ import net.danopia.protonet.bean.SelectionArea;
 import net.danopia.protonet.transport.AbsTransport;
 import net.danopia.protonet.transport.TransportFactory;
 import net.danopia.protonet.util.HostDatabase;
-import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
-import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.Typeface;
-import android.graphics.Bitmap.Config;
-import android.graphics.Paint.FontMetrics;
-import android.text.ClipboardManager;
 import android.util.Log;
 import de.mud.terminal.VDUBuffer;
 import de.mud.terminal.VDUDisplay;
@@ -59,9 +54,6 @@ import de.mud.terminal.vt320;
 public class TerminalBridge implements VDUDisplay {
 	public final static String TAG = "ConnectBot.TerminalBridge";
 
-	public final static int DEFAULT_FONT_SIZE = 10;
-	private final static int FONT_SIZE_STEP = 2;
-
 	public Integer[] color;
 
 	public int defaultFg = HostDatabase.DEFAULT_FG_COLOR;
@@ -77,7 +69,6 @@ public class TerminalBridge implements VDUDisplay {
 
 	private Relay relay;
 
-	private final String emulation;
 	private final int scrollback;
 
 	public Bitmap bitmap = null;
@@ -89,23 +80,14 @@ public class TerminalBridge implements VDUDisplay {
 	private boolean disconnected = false;
 	private boolean awaitingClose = false;
 
-	private boolean forcedSize = false;
-	private int columns;
-	private int rows;
-
 	/* package */ final TerminalKeyListener keyListener;
 
 	private boolean selectingForCopy = false;
 	private final SelectionArea selectionArea;
-	private ClipboardManager clipboard;
 
 	public int charWidth = -1;
 	public int charHeight = -1;
 	private int charTop = -1;
-
-	private float fontSize = -1;
-
-	private final List<FontSizeChangedListener> fontSizeChangedListeners;
 
 	private final List<String> localOutput;
 
@@ -136,7 +118,6 @@ public class TerminalBridge implements VDUDisplay {
 			public void debug(String s) {}
 		};
 
-		emulation = null;
 		manager = null;
 
 		defaultPaint = new Paint();
@@ -145,8 +126,6 @@ public class TerminalBridge implements VDUDisplay {
 		scrollback = 1;
 
 		localOutput = new LinkedList<String>();
-
-		fontSizeChangedListeners = new LinkedList<FontSizeChangedListener>();
 
 		transport = null;
 
@@ -162,7 +141,6 @@ public class TerminalBridge implements VDUDisplay {
 		this.manager = manager;
 		this.host = host;
 
-		emulation = manager.getEmulation();
 		scrollback = manager.getScrollback();
 
 		// create prompt helper to relay password and hostkey requests up to gui
@@ -175,13 +153,6 @@ public class TerminalBridge implements VDUDisplay {
 		defaultPaint.setFakeBoldText(true); // more readable?
 
 		localOutput = new LinkedList<String>();
-
-		fontSizeChangedListeners = new LinkedList<FontSizeChangedListener>();
-
-		int hostFontSize = host.getFontSize();
-		if (hostFontSize <= 0)
-			hostFontSize = DEFAULT_FONT_SIZE;
-		setFontSize(hostFontSize);
 
 		// create terminal buffer and handle outgoing data
 		// this is probably status reply information
@@ -252,22 +223,17 @@ public class TerminalBridge implements VDUDisplay {
 	 * Spawn thread to open connection and start login process.
 	 */
 	protected void startConnection() {
-		transport = TransportFactory.getTransport(host.getProtocol());
+		transport = TransportFactory.getTransport();
 		transport.setBridge(this);
 		transport.setManager(manager);
 		transport.setHost(host);
-
-		// TODO make this more abstract so we don't litter on AbsTransport
-		transport.setCompression(host.getCompression());
-		transport.setUseAuthAgent(host.getUseAuthAgent());
-		transport.setEmulation(emulation);
 
 		if (transport.canChannels()) {
 			for (ChannelBean portForward : manager.hostdb.getChannelsForHost(host))
 				transport.addChannel(portForward);
 		}
 
-		outputLine(manager.res.getString(R.string.terminal_connecting, host.getHostname(), host.getPort(), host.getProtocol()));
+		outputLine(manager.res.getString(R.string.terminal_connecting, host.getHostname(), host.getPort()));
 
 		Thread connectionThread = new Thread(new Runnable() {
 			public void run() {
@@ -359,27 +325,12 @@ public class TerminalBridge implements VDUDisplay {
 		// We no longer need our local output.
 		localOutput.clear();
 
-		// previously tried vt100 and xterm for emulation modes
-		// "screen" works the best for color and escape codes
-		((vt320) buffer).setAnswerBack(emulation);
-
-		if (HostDatabase.DELKEY_BACKSPACE.equals(host.getDelKey()))
-			((vt320) buffer).setBackspace(vt320.DELETE_IS_BACKSPACE);
-		else
-			((vt320) buffer).setBackspace(vt320.DELETE_IS_DEL);
-
 		// create thread to relay incoming connection data to buffer
 		relay = new Relay(this, transport, (vt320) buffer, host.getEncoding());
 		Thread relayThread = new Thread(relay);
 		relayThread.setDaemon(true);
 		relayThread.setName("Relay");
 		relayThread.start();
-
-		// force font-size to make sure we resizePTY as needed
-		setFontSize(fontSize);
-
-		// finally send any post-login string, if requested
-		injectString(host.getPostLogin());
 	}
 
 	/**
@@ -467,157 +418,6 @@ public class TerminalBridge implements VDUDisplay {
 
 	public synchronized void tryKeyVibrate() {
 		manager.tryKeyVibrate();
-	}
-
-	/**
-	 * Request a different font size. Will make call to parentChanged() to make
-	 * sure we resize PTY if needed.
-	 */
-	/* package */ final void setFontSize(float size) {
-		if (size <= 0.0)
-			return;
-
-		defaultPaint.setTextSize(size);
-		fontSize = size;
-
-		// read new metrics to get exact pixel dimensions
-		FontMetrics fm = defaultPaint.getFontMetrics();
-		charTop = (int)Math.ceil(fm.top);
-
-		float[] widths = new float[1];
-		defaultPaint.getTextWidths("X", widths);
-		charWidth = (int)Math.ceil(widths[0]);
-		charHeight = (int)Math.ceil(fm.descent - fm.top);
-
-		// refresh any bitmap with new font size
-		if(parent != null)
-			parentChanged(parent);
-
-		for (FontSizeChangedListener ofscl : fontSizeChangedListeners)
-			ofscl.onFontSizeChanged(size);
-
-		host.setFontSize((int) fontSize);
-		manager.hostdb.updateFontSize(host);
-
-		forcedSize = false;
-	}
-
-	/**
-	 * Add an {@link FontSizeChangedListener} to the list of listeners for this
-	 * bridge.
-	 *
-	 * @param listener
-	 *            listener to add
-	 */
-	public void addFontSizeChangedListener(FontSizeChangedListener listener) {
-		fontSizeChangedListeners.add(listener);
-	}
-
-	/**
-	 * Remove an {@link FontSizeChangedListener} from the list of listeners for
-	 * this bridge.
-	 *
-	 * @param listener
-	 */
-	public void removeFontSizeChangedListener(FontSizeChangedListener listener) {
-		fontSizeChangedListeners.remove(listener);
-	}
-
-	/**
-	 * Something changed in our parent {@link TerminalView}, maybe it's a new
-	 * parent, or maybe it's an updated font size. We should recalculate
-	 * terminal size information and request a PTY resize.
-	 */
-	public final synchronized void parentChanged(TerminalView parent) {
-		if (manager != null && !manager.isResizeAllowed()) {
-			Log.d(TAG, "Resize is not allowed now");
-			return;
-		}
-
-		this.parent = parent;
-		final int width = parent.getWidth();
-		final int height = parent.getHeight();
-
-		// Something has gone wrong with our layout; we're 0 width or height!
-		if (width <= 0 || height <= 0)
-			return;
-
-		clipboard = (ClipboardManager) parent.getContext().getSystemService(Context.CLIPBOARD_SERVICE);
-		keyListener.setClipboardManager(clipboard);
-
-		if (!forcedSize) {
-			// recalculate buffer size
-			int newColumns, newRows;
-
-			newColumns = width / charWidth;
-			newRows = height / charHeight;
-
-			// If nothing has changed in the terminal dimensions and not an intial
-			// draw then don't blow away scroll regions and such.
-			if (newColumns == columns && newRows == rows)
-				return;
-
-			columns = newColumns;
-			rows = newRows;
-		}
-
-		// reallocate new bitmap if needed
-		boolean newBitmap = (bitmap == null);
-		if(bitmap != null)
-			newBitmap = (bitmap.getWidth() != width || bitmap.getHeight() != height);
-
-		if (newBitmap) {
-			discardBitmap();
-			bitmap = Bitmap.createBitmap(width, height, Config.ARGB_8888);
-			canvas.setBitmap(bitmap);
-		}
-
-		// clear out any old buffer information
-		defaultPaint.setColor(Color.BLACK);
-		canvas.drawPaint(defaultPaint);
-
-		// Stroke the border of the terminal if the size is being forced;
-		if (forcedSize) {
-			int borderX = (columns * charWidth) + 1;
-			int borderY = (rows * charHeight) + 1;
-
-			defaultPaint.setColor(Color.GRAY);
-			defaultPaint.setStrokeWidth(0.0f);
-			if (width >= borderX)
-				canvas.drawLine(borderX, 0, borderX, borderY + 1, defaultPaint);
-			if (height >= borderY)
-				canvas.drawLine(0, borderY, borderX + 1, borderY, defaultPaint);
-		}
-
-		try {
-			// request a terminal pty resize
-			synchronized (buffer) {
-				buffer.setScreenSize(columns, rows, true);
-			}
-
-			if(transport != null)
-				transport.setDimensions(columns, rows, width, height);
-		} catch(Exception e) {
-			Log.e(TAG, "Problem while trying to resize screen or PTY", e);
-		}
-
-		// redraw local output if we don't have a sesson to receive our resize request
-		if (transport == null) {
-			synchronized (localOutput) {
-				((vt320) buffer).reset();
-
-				for (String line : localOutput)
-					((vt320) buffer).putString(line);
-			}
-		}
-
-		// force full redraw with new buffer size
-		fullRedraw = true;
-		redraw();
-
-		parent.notifyUser(String.format("%d x %d", columns, rows));
-
-		Log.i(TAG, String.format("parentChanged() now width=%d, height=%d", columns, rows));
 	}
 
 	/**
@@ -753,72 +553,6 @@ public class TerminalBridge implements VDUDisplay {
 
 	// We don't have a scroll bar.
 	public void updateScrollBar() {
-	}
-
-	/**
-	 * Resize terminal to fit [rows]x[cols] in screen of size [width]x[height]
-	 * @param rows
-	 * @param cols
-	 * @param width
-	 * @param height
-	 */
-	public synchronized void resizeComputed(int cols, int rows, int width, int height) {
-		float size = 8.0f;
-		float step = 8.0f;
-		float limit = 0.125f;
-
-		int direction;
-
-		while ((direction = fontSizeCompare(size, cols, rows, width, height)) < 0)
-			size += step;
-
-		if (direction == 0) {
-			Log.d("fontsize", String.format("Found match at %f", size));
-			return;
-		}
-
-		step /= 2.0f;
-		size -= step;
-
-		while ((direction = fontSizeCompare(size, cols, rows, width, height)) != 0
-				&& step >= limit) {
-			step /= 2.0f;
-			if (direction > 0) {
-				size -= step;
-			} else {
-				size += step;
-			}
-		}
-
-		if (direction > 0)
-			size -= step;
-
-		this.columns = cols;
-		this.rows = rows;
-		setFontSize(size);
-		forcedSize = true;
-	}
-
-	private int fontSizeCompare(float size, int cols, int rows, int width, int height) {
-		// read new metrics to get exact pixel dimensions
-		defaultPaint.setTextSize(size);
-		FontMetrics fm = defaultPaint.getFontMetrics();
-
-		float[] widths = new float[1];
-		defaultPaint.getTextWidths("X", widths);
-		int termWidth = (int)widths[0] * cols;
-		int termHeight = (int)Math.ceil(fm.descent - fm.top) * rows;
-
-		Log.d("fontsize", String.format("font size %f resulted in %d x %d", size, termWidth, termHeight));
-
-		// Check to see if it fits in resolution specified.
-		if (termWidth > width || termHeight > height)
-			return 1;
-
-		if (termWidth == width || termHeight == height)
-			return 0;
-
-		return -1;
 	}
 
 	/**
@@ -986,19 +720,5 @@ public class TerminalBridge implements VDUDisplay {
 		// if we're in scrollback, scroll to bottom of window on input
 		if (buffer.windowBase != buffer.screenBase)
 			buffer.setWindowBase(buffer.screenBase);
-	}
-
-	/**
-	 *
-	 */
-	public void increaseFontSize() {
-		setFontSize(fontSize + FONT_SIZE_STEP);
-	}
-
-	/**
-	 *
-	 */
-	public void decreaseFontSize() {
-		setFontSize(fontSize - FONT_SIZE_STEP);
 	}
 }

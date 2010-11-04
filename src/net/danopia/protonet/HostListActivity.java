@@ -296,10 +296,6 @@ public class HostListActivity extends ListActivity {
 			}
 		});
 
-		MenuItem keys = menu.add(R.string.list_menu_pubkeys);
-		keys.setIcon(android.R.drawable.ic_lock_lock);
-		keys.setIntent(new Intent(HostListActivity.this, PubkeyListActivity.class));
-
 		MenuItem colors = menu.add("Colors");
 		colors.setIcon(android.R.drawable.ic_menu_slideshow);
 		colors.setIntent(new Intent(HostListActivity.this, ColorsActivity.class));
@@ -400,9 +396,8 @@ public class HostListActivity extends ListActivity {
 
 		HostBean host = TransportFactory.findHost(hostdb, uri);
 		if (host == null) {
-			host = TransportFactory.getTransport(uri.getScheme()).createHost(uri);
+			host = TransportFactory.getTransport().createHost(uri);
 			host.setColor(HostDatabase.COLOR_GRAY);
-			host.setPubkeyId(HostDatabase.PUBKEYID_ANY);
 			hostdb.saveHost(host);
 		}
 

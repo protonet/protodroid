@@ -18,7 +18,6 @@
 package net.danopia.protonet.bean;
 
 import net.danopia.protonet.util.HostDatabase;
-
 import android.content.ContentValues;
 import android.net.Uri;
 
@@ -35,19 +34,10 @@ public class HostBean extends AbstractBean {
 	private String username = null;
 	private String hostname = null;
 	private int port = 22;
-	private String protocol = "ssh";
-	private String hostKeyAlgo = null;
-	private byte[] hostKey = null;
 	private long lastConnect = -1;
 	private String color;
 	private boolean useKeys = true;
-	private String useAuthAgent = HostDatabase.AUTHAGENT_NO;
-	private String postLogin = null;
-	private long pubkeyId = -1;
 	private boolean wantSession = true;
-	private String delKey = HostDatabase.DELKEY_DEL;
-	private int fontSize = -1;
-	private boolean compression = false;
 	private String encoding = HostDatabase.ENCODING_DEFAULT;
 	private boolean stayConnected = false;
 
@@ -60,9 +50,8 @@ public class HostBean extends AbstractBean {
 		return BEAN_NAME;
 	}
 
-	public HostBean(String nickname, String protocol, String username, String hostname, int port) {
+	public HostBean(String nickname, String username, String hostname, int port) {
 		this.nickname = nickname;
-		this.protocol = protocol;
 		this.username = username;
 		this.hostname = hostname;
 		this.port = port;
@@ -98,33 +87,6 @@ public class HostBean extends AbstractBean {
 	public int getPort() {
 		return port;
 	}
-
-	public void setProtocol(String protocol) {
-		this.protocol = protocol;
-	}
-
-	public String getProtocol() {
-		return protocol;
-	}
-
-	public void setHostKeyAlgo(String hostKeyAlgo) {
-		this.hostKeyAlgo = hostKeyAlgo;
-	}
-	public String getHostKeyAlgo() {
-		return hostKeyAlgo;
-	}
-	public void setHostKey(byte[] hostKey) {
-		if (hostKey == null)
-			this.hostKey = null;
-		else
-			this.hostKey = hostKey.clone();
-	}
-	public byte[] getHostKey() {
-		if (hostKey == null)
-			return null;
-		else
-			return hostKey.clone();
-	}
 	public void setLastConnect(long lastConnect) {
 		this.lastConnect = lastConnect;
 	}
@@ -143,65 +105,24 @@ public class HostBean extends AbstractBean {
 	public boolean getUseKeys() {
 		return useKeys;
 	}
-	public void setUseAuthAgent(String useAuthAgent) {
-		this.useAuthAgent = useAuthAgent;
-	}
-	public String getUseAuthAgent() {
-		return useAuthAgent;
-	}
-	public void setPostLogin(String postLogin) {
-		this.postLogin = postLogin;
-	}
-	public String getPostLogin() {
-		return postLogin;
-	}
-	public void setPubkeyId(long pubkeyId) {
-		this.pubkeyId = pubkeyId;
-	}
-	public long getPubkeyId() {
-		return pubkeyId;
-	}
 	public void setWantSession(boolean wantSession) {
 		this.wantSession = wantSession;
 	}
 	public boolean getWantSession() {
 		return wantSession;
 	}
-	public void setDelKey(String delKey) {
-		this.delKey = delKey;
-	}
-	public String getDelKey() {
-		return delKey;
-	}
-	public void setFontSize(int fontSize) {
-		this.fontSize = fontSize;
-	}
-	public int getFontSize() {
-		return fontSize;
-	}
-	public void setCompression(boolean compression) {
-		this.compression = compression;
-	}
-	public boolean getCompression() {
-		return compression;
-	}
-
 	public void setEncoding(String encoding) {
 		this.encoding  = encoding;
 	}
-
 	public String getEncoding() {
 		return this.encoding;
 	}
-
 	public void setStayConnected(boolean stayConnected) {
 		this.stayConnected = stayConnected;
 	}
-
 	public boolean getStayConnected() {
 		return stayConnected;
 	}
-
 	public String getDescription() {
 		String description = String.format("%s@%s", username, hostname);
 
@@ -216,22 +137,13 @@ public class HostBean extends AbstractBean {
 		ContentValues values = new ContentValues();
 
 		values.put(HostDatabase.FIELD_HOST_NICKNAME, nickname);
-		values.put(HostDatabase.FIELD_HOST_PROTOCOL, protocol);
 		values.put(HostDatabase.FIELD_HOST_USERNAME, username);
 		values.put(HostDatabase.FIELD_HOST_HOSTNAME, hostname);
 		values.put(HostDatabase.FIELD_HOST_PORT, port);
-		values.put(HostDatabase.FIELD_HOST_HOSTKEYALGO, hostKeyAlgo);
-		values.put(HostDatabase.FIELD_HOST_HOSTKEY, hostKey);
 		values.put(HostDatabase.FIELD_HOST_LASTCONNECT, lastConnect);
 		values.put(HostDatabase.FIELD_HOST_COLOR, color);
 		values.put(HostDatabase.FIELD_HOST_USEKEYS, Boolean.toString(useKeys));
-		values.put(HostDatabase.FIELD_HOST_USEAUTHAGENT, useAuthAgent);
-		values.put(HostDatabase.FIELD_HOST_POSTLOGIN, postLogin);
-		values.put(HostDatabase.FIELD_HOST_PUBKEYID, pubkeyId);
 		values.put(HostDatabase.FIELD_HOST_WANTSESSION, Boolean.toString(wantSession));
-		values.put(HostDatabase.FIELD_HOST_DELKEY, delKey);
-		values.put(HostDatabase.FIELD_HOST_FONTSIZE, fontSize);
-		values.put(HostDatabase.FIELD_HOST_COMPRESSION, Boolean.toString(compression));
 		values.put(HostDatabase.FIELD_HOST_ENCODING, encoding);
 		values.put(HostDatabase.FIELD_HOST_STAYCONNECTED, stayConnected);
 
@@ -252,12 +164,6 @@ public class HostBean extends AbstractBean {
 			if (host.getNickname() != null)
 				return false;
 		} else if (!nickname.equals(host.getNickname()))
-			return false;
-
-		if (protocol == null) {
-			if (host.getProtocol() != null)
-				return false;
-		} else if (!protocol.equals(host.getProtocol()))
 			return false;
 
 		if (username == null) {
@@ -286,7 +192,6 @@ public class HostBean extends AbstractBean {
 			return (int)id;
 
 		hash = 31 * hash + (null == nickname ? 0 : nickname.hashCode());
-		hash = 31 * hash + (null == protocol ? 0 : protocol.hashCode());
 		hash = 31 * hash + (null == username ? 0 : username.hashCode());
 		hash = 31 * hash + (null == hostname ? 0 : hostname.hashCode());
 		hash = 31 * hash + port;
@@ -298,9 +203,7 @@ public class HostBean extends AbstractBean {
 	 * @return URI identifying this HostBean
 	 */
 	public Uri getUri() {
-		StringBuilder sb = new StringBuilder();
-		sb.append(protocol)
-			.append("://");
+		StringBuilder sb = new StringBuilder("ptn://");
 
 		if (username != null)
 			sb.append(Uri.encode(username))

@@ -33,8 +33,6 @@ import net.danopia.protonet.bean.HostBean;
 import net.danopia.protonet.service.TerminalBridge;
 import net.danopia.protonet.service.TerminalManager;
 import net.danopia.protonet.util.HostDatabase;
-
-
 import android.content.Context;
 import android.net.Uri;
 import android.util.Log;
@@ -283,8 +281,6 @@ public class Telnet extends AbsTransport {
 	public HostBean createHost(Uri uri) {
 		HostBean host = new HostBean();
 
-		host.setProtocol(PROTOCOL);
-
 		host.setHostname(uri.getHost());
 
 		int port = uri.getPort();
@@ -305,7 +301,6 @@ public class Telnet extends AbsTransport {
 
 	@Override
 	public void getSelectionArgs(Uri uri, Map<String, String> selection) {
-		selection.put(HostDatabase.FIELD_HOST_PROTOCOL, PROTOCOL);
 		selection.put(HostDatabase.FIELD_HOST_NICKNAME, uri.getFragment());
 		selection.put(HostDatabase.FIELD_HOST_HOSTNAME, uri.getHost());
 
