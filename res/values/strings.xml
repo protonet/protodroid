@@ -54,6 +54,7 @@
 	<!-- The UUID for channels. -->
 	<string name="prompt_uuid">"UUID:"</string>
 	<string name="prompt_type">"Type:"</string>
+	<string name="prompt_username">"Username:"</string>
 	<string name="prompt_old_password">"Old password:"</string>
 	<string name="prompt_password">"Password:"</string>
 	<!-- Added after a "Password:" prompt to indicate user needs to confirm entry. -->

@@ -26,7 +26,6 @@ import java.nio.charset.CoderResult;
 import java.nio.charset.CodingErrorAction;
 import java.util.ArrayList;
 
-import net.danopia.protonet.util.EastAsianWidth;
 import android.util.Log;
 
 /**
@@ -84,9 +83,6 @@ public class Relay implements Runnable {
 		byteBuffer = ByteBuffer.allocate(BUFFER_SIZE);
 		charBuffer = CharBuffer.allocate(BUFFER_SIZE);
 
-		/* for East Asian character widths */
-		byte[] wideAttribute = new byte[BUFFER_SIZE];
-
 		byteArray = byteBuffer.array();
 		charArray = charBuffer.array();
 
@@ -96,13 +92,9 @@ public class Relay implements Runnable {
 		byteBuffer.limit(0);
 		int bytesToRead;
 		int offset;
-		int charWidth;
-
-		EastAsianWidth measurer = EastAsianWidth.getInstance();
 
 		try {
 			while (true) {
-				charWidth = 8;
 				bytesToRead = byteBuffer.capacity() - byteBuffer.limit();
 				offset = byteBuffer.arrayOffset() + byteBuffer.limit();
 				bytesRead = transport.read(byteArray, offset, bytesToRead);
