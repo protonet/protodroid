@@ -29,8 +29,6 @@ import net.danopia.protonet.TerminalView;
 import net.danopia.protonet.bean.ChannelBean;
 import net.danopia.protonet.bean.HostBean;
 import net.danopia.protonet.bean.SelectionArea;
-import net.danopia.protonet.transport.AbsTransport;
-import net.danopia.protonet.transport.TransportFactory;
 import net.danopia.protonet.util.HostDatabase;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
@@ -63,7 +61,7 @@ public class TerminalBridge implements VDUDisplay {
 
 	public HostBean host;
 
-	/* package */ AbsTransport transport;
+	/* package */ Transport transport;
 
 	final Paint defaultPaint;
 
@@ -223,7 +221,7 @@ public class TerminalBridge implements VDUDisplay {
 	 * Spawn thread to open connection and start login process.
 	 */
 	protected void startConnection() {
-		transport = TransportFactory.getTransport();
+		transport = new Transport();
 		transport.setBridge(this);
 		transport.setManager(manager);
 		transport.setHost(host);
@@ -697,13 +695,6 @@ public class TerminalBridge implements VDUDisplay {
 			urls.add(urlMatcher.group());
 
 		return urls;
-	}
-
-	/**
-	 * @return
-	 */
-	public boolean isUsingNetwork() {
-		return transport.usesNetwork();
 	}
 
 	/**

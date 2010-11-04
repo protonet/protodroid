@@ -22,7 +22,7 @@ import java.util.List;
 import net.danopia.protonet.bean.HostBean;
 import net.danopia.protonet.service.TerminalBridge;
 import net.danopia.protonet.service.TerminalManager;
-import net.danopia.protonet.transport.TransportFactory;
+import net.danopia.protonet.service.Transport;
 import net.danopia.protonet.util.HostDatabase;
 import net.danopia.protonet.util.PreferenceConstants;
 import net.danopia.protonet.util.UpdateHelper;
@@ -233,24 +233,11 @@ public class HostListActivity extends ListActivity {
 			}
 		});
 
-		transportSpinner = (Spinner)findViewById(R.id.transport_selection);
-		transportSpinner.setVisibility(makingShortcut ? View.GONE : View.VISIBLE);
-		ArrayAdapter<String> transportSelection = new ArrayAdapter<String>(this,
-				android.R.layout.simple_spinner_item, TransportFactory.getTransportNames());
-		transportSelection.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
-		transportSpinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
-			public void onItemSelected(AdapterView<?> arg0, View view, int position, long id) {
-				String formatHint = TransportFactory.getFormatHint(
-						(String) transportSpinner.getSelectedItem(),
-						HostListActivity.this);
+		String formatHint = Transport.getFormatHint(HostListActivity.this);
 
-				quickconnect.setHint(formatHint);
-				quickconnect.setError(null);
-				quickconnect.requestFocus();
-			}
-			public void onNothingSelected(AdapterView<?> arg0) { }
-		});
-		transportSpinner.setAdapter(transportSelection);
+		quickconnect.setHint(formatHint);
+		quickconnect.setError(null);
+		quickconnect.requestFocus();
 
 		this.inflater = LayoutInflater.from(this);
 	}
@@ -383,20 +370,17 @@ public class HostListActivity extends ListActivity {
 	 * @return
 	 */
 	private boolean startConsoleActivity() {
-		Uri uri = TransportFactory.getUri((String) transportSpinner
-				.getSelectedItem(), quickconnect.getText().toString());
+		Uri uri = Transport.getUri(quickconnect.getText().toString());
 
 		if (uri == null) {
 			quickconnect.setError(getString(R.string.list_format_error,
-					TransportFactory.getFormatHint(
-							(String) transportSpinner.getSelectedItem(),
-							HostListActivity.this)));
+					Transport.getFormatHint(HostListActivity.this)));
 			return false;
 		}
 
-		HostBean host = TransportFactory.findHost(hostdb, uri);
+		HostBean host = Transport.findHost(hostdb, uri);
 		if (host == null) {
-			host = TransportFactory.getTransport().createHost(uri);
+			host = new Transport().createHost(uri);
 			host.setColor(HostDatabase.COLOR_GRAY);
 			hostdb.saveHost(host);
 		}

@@ -25,7 +25,6 @@ import java.nio.charset.CharsetDecoder;
 import java.nio.charset.CoderResult;
 import java.nio.charset.CodingErrorAction;
 
-import net.danopia.protonet.transport.AbsTransport;
 import net.danopia.protonet.util.EastAsianWidth;
 
 import org.apache.harmony.niochar.charset.additional.IBM437;
@@ -46,7 +45,7 @@ public class Relay implements Runnable {
 	private Charset currentCharset;
 	private CharsetDecoder decoder;
 
-	private AbsTransport transport;
+	private Transport transport;
 
 	private vt320 buffer;
 
@@ -56,7 +55,7 @@ public class Relay implements Runnable {
 	private byte[] byteArray;
 	private char[] charArray;
 
-	public Relay(TerminalBridge bridge, AbsTransport transport, vt320 buffer, String encoding) {
+	public Relay(TerminalBridge bridge, Transport transport, vt320 buffer, String encoding) {
 		setCharset(encoding);
 		this.bridge = bridge;
 		this.transport = transport;

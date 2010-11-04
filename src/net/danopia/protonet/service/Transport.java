@@ -15,9 +15,14 @@
  * limitations under the License.
  */
 
-package net.danopia.protonet.transport;
+package net.danopia.protonet.service;
 
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.net.Socket;
+import java.net.SocketException;
+import java.net.UnknownHostException;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -28,8 +33,6 @@ import java.util.regex.Pattern;
 import net.danopia.protonet.R;
 import net.danopia.protonet.bean.ChannelBean;
 import net.danopia.protonet.bean.HostBean;
-import net.danopia.protonet.service.TerminalBridge;
-import net.danopia.protonet.service.TerminalManager;
 import net.danopia.protonet.util.HostDatabase;
 import android.content.Context;
 import android.net.Uri;
@@ -39,17 +42,69 @@ import android.util.Log;
  * @author Kenny Root
  *
  */
-public class SSH extends AbsTransport {
-	public SSH() {
-		super();
+public class Transport {
+	HostBean host;
+	TerminalBridge bridge;
+	TerminalManager manager;
+
+	/**
+	 * @return protocol part of the URI
+	 */
+	public static String getProtocolName() {
+		return "unknown";
+	}
+
+	public void setHost(HostBean host) {
+		this.host = host;
+	}
+
+	public void setBridge(TerminalBridge bridge) {
+		this.bridge = bridge;
+	}
+
+	public void setManager(TerminalManager manager) {
+		this.manager = manager;
+	}
+
+
+
+
+	/**
+	 * @param hostdb Handle to HostDatabase
+	 * @param uri URI to target server
+	 * @param host HostBean in which to put the results
+	 * @return true when host was found
+	 */
+	public static HostBean findHost(HostDatabase hostdb, Uri uri) {
+		Transport transport = new Transport();
+
+		Map<String, String> selection = new HashMap<String, String>();
+
+		transport.getSelectionArgs(uri, selection);
+		if (selection.size() == 0) {
+			Log.e(TAG, String.format("Transport %s failed to do something useful with URI=%s",
+					uri.getScheme(), uri.toString()));
+			throw new IllegalStateException("Failed to get needed selection arguments");
+		}
+
+		return hostdb.findHost(selection);
+	}
+
+
+
+
+
+	public Transport() {
 	}
 
 	/**
 	 * @param bridge
 	 * @param db
 	 */
-	public SSH(HostBean host, TerminalBridge bridge, TerminalManager manager) {
-		super(host, bridge, manager);
+	public Transport(HostBean host, TerminalBridge bridge, TerminalManager manager) {
+		this.host = host;
+		this.bridge = bridge;
+		this.manager = manager;
 	}
 
 	private static final String TAG = "ConnectBot.SSH";
@@ -59,6 +114,10 @@ public class SSH extends AbsTransport {
 	static {
 		hostmask = Pattern.compile("^(.+)@([0-9a-z.-]+)(:(\\d+))?$", Pattern.CASE_INSENSITIVE);
 	}
+
+	private Socket socket;
+	private InputStream is;
+	private OutputStream os;
 
 	private volatile boolean authenticated = false;
 	private volatile boolean connected = false;
@@ -122,69 +181,62 @@ public class SSH extends AbsTransport {
 	}
 	*/
 
-	@Override
 	public void connect() {
-		//connection = new Connection(host.getHostname(), host.getPort());
-		//connection.addConnectionMonitor(this);
+		try {
+			socket = new Socket(host.getHostname(), host.getPort());
 
-		// TODO: Connect and auth
+			connected = true;
+
+			is = socket.getInputStream();
+			os = socket.getOutputStream();
+
+			bridge.onConnected();
+		} catch (UnknownHostException e) {
+			Log.d(TAG, "IO Exception connecting to host", e);
+		} catch (IOException e) {
+			Log.d(TAG, "IO Exception connecting to host", e);
+		}
 	}
 
-	@Override
 	public void close() {
 		connected = false;
-
-		/*if (connection != null) {
-			connection.close();
-			connection = null;
-		}*/
+		if (socket != null)
+			try {
+				socket.close();
+				socket = null;
+			} catch (IOException e) {
+				Log.d(TAG, "Error closing telnet socket.", e);
+			}
 	}
 
-	private void onDisconnect() {
-		close();
+	public void flush() throws IOException {
+		os.flush();
 	}
 
-	@Override
-	public Map<String, String> getOptions() {
-		Map<String, String> options = new HashMap<String, String>();
-
-		return options;
-	}
-
-	@Override
-	public void setOptions(Map<String, String> options) {
-	}
-
-	@Override
 	public boolean isSessionOpen() {
 		return sessionOpen;
 	}
 
-	@Override
 	public boolean isConnected() {
 		return connected;
 	}
 
 	public void connectionLost(Throwable reason) {
-		onDisconnect();
+		close();
 	}
 
-	@Override
 	public boolean canChannels() {
 		return true;
 	}
 
-	@Override
 	public List<ChannelBean> getChannels() {
 		return channels;
 	}
 
-	@Override
 	public boolean addChannel(ChannelBean portForward) {
 		return channels.add(portForward);
 	}
 
-	@Override
 	public boolean removeChannel(ChannelBean portForward) {
 		// Make sure we don't have a phantom forwarder.
 		disableChannel(portForward);
@@ -192,7 +244,6 @@ public class SSH extends AbsTransport {
 		return channels.remove(portForward);
 	}
 
-	@Override
 	public boolean enableChannel(ChannelBean portForward) {
 		if (!channels.contains(portForward)) {
 			Log.e(TAG, "Attempt to enable port forward not in list");
@@ -256,7 +307,6 @@ public class SSH extends AbsTransport {
 		return true;
 	}
 
-	@Override
 	public boolean disableChannel(ChannelBean portForward) {
 		if (!channels.contains(portForward)) {
 			Log.e(TAG, "Attempt to disable port forward not in list");
@@ -326,12 +376,10 @@ public class SSH extends AbsTransport {
 		return true;
 	}
 
-	@Override
 	public int getDefaultPort() {
 		return DEFAULT_PORT;
 	}
 
-	@Override
 	public String getDefaultNickname(String username, String hostname, int port) {
 		if (port == DEFAULT_PORT) {
 			return String.format("%s@%s", username, hostname);
@@ -378,7 +426,6 @@ public class SSH extends AbsTransport {
 		return uri;
 	}
 
-	@Override
 	public HostBean createHost(Uri uri) {
 		HostBean host = new HostBean();
 
@@ -402,7 +449,6 @@ public class SSH extends AbsTransport {
 		return host;
 	}
 
-	@Override
 	public void getSelectionArgs(Uri uri, Map<String, String> selection) {
 		selection.put(HostDatabase.FIELD_HOST_NICKNAME, uri.getFragment());
 		selection.put(HostDatabase.FIELD_HOST_HOSTNAME, uri.getHost());
@@ -421,56 +467,54 @@ public class SSH extends AbsTransport {
 				context.getString(R.string.format_port));
 	}
 
-	/* (non-Javadoc)
-	 * @see org.connectbot.transport.AbsTransport#usesNetwork()
-	 */
-	@Override
-	public boolean usesNetwork() {
-		return true;
+
+
+
+
+
+	public int read(byte[] buffer, int start, int len) throws IOException {
+		/* process all already read bytes */
+		int n = 0;
+
+		do {
+			//n = handler.negotiate(buffer, start);
+			if (n > 0)
+				return n;
+		} while (n == 0);
+
+		while (n <= 0) {
+			do {
+				//n = handler.negotiate(buffer, start);
+				if (n > 0)
+					return n;
+			} while (n == 0);
+			n = is.read(buffer, start, len);
+			if (n < 0) {
+				bridge.dispatchDisconnect(false);
+				throw new IOException("Remote end closed connection.");
+			}
+
+			//handler.inputfeed(buffer, start, n);
+			//n = handler.negotiate(buffer, start);
+		}
+		return n;
 	}
 
-	/* (non-Javadoc)
-	 * @see net.danopia.protonet.transport.AbsTransport#flush()
-	 */
-	@Override
-	public void flush() throws IOException {
-		// TODO Auto-generated method stub
-
-	}
-
-	/* (non-Javadoc)
-	 * @see net.danopia.protonet.transport.AbsTransport#read(byte[], int, int)
-	 */
-	@Override
-	public int read(byte[] buffer, int offset, int length) throws IOException {
-		// TODO Auto-generated method stub
-		return 0;
-	}
-
-	/* (non-Javadoc)
-	 * @see net.danopia.protonet.transport.AbsTransport#setDimensions(int, int, int, int)
-	 */
-	@Override
-	public void setDimensions(int columns, int rows, int width, int height) {
-		// TODO Auto-generated method stub
-
-	}
-
-	/* (non-Javadoc)
-	 * @see net.danopia.protonet.transport.AbsTransport#write(byte[])
-	 */
-	@Override
 	public void write(byte[] buffer) throws IOException {
-		// TODO Auto-generated method stub
-
+		try {
+			if (os != null)
+				os.write(buffer);
+		} catch (SocketException e) {
+			bridge.dispatchDisconnect(false);
+		}
 	}
 
-	/* (non-Javadoc)
-	 * @see net.danopia.protonet.transport.AbsTransport#write(int)
-	 */
-	@Override
 	public void write(int c) throws IOException {
-		// TODO Auto-generated method stub
-
+		try {
+			if (os != null)
+				os.write(c);
+		} catch (SocketException e) {
+			bridge.dispatchDisconnect(false);
+		}
 	}
 }

@@ -26,7 +26,6 @@ import java.util.Map;
 
 import net.danopia.protonet.R;
 import net.danopia.protonet.bean.HostBean;
-import net.danopia.protonet.transport.TransportFactory;
 import net.danopia.protonet.util.HostDatabase;
 import net.danopia.protonet.util.PreferenceConstants;
 import android.app.Service;
@@ -185,9 +184,7 @@ public class TerminalManager extends Service implements BridgeDisconnectedListen
 			disconnected.remove(bridge.host);
 		}
 
-		if (bridge.isUsingNetwork()) {
-			connectivityManager.incRef();
-		}
+		connectivityManager.incRef();
 
 		if (prefs.getBoolean(PreferenceConstants.CONNECTION_PERSIST, true)) {
 			ConnectionNotifier.getInstance().showRunningNotification(this);
@@ -213,10 +210,10 @@ public class TerminalManager extends Service implements BridgeDisconnectedListen
 	 * format specified by an individual transport.
 	 */
 	public TerminalBridge openConnection(Uri uri) throws Exception {
-		HostBean host = TransportFactory.findHost(hostdb, uri);
+		HostBean host = Transport.findHost(hostdb, uri);
 
 		if (host == null)
-			host = TransportFactory.getTransport().createHost(uri);
+			host = new Transport().createHost(uri);
 
 		return openConnection(host);
 	}
@@ -275,9 +272,7 @@ public class TerminalManager extends Service implements BridgeDisconnectedListen
 			mHostBridgeMap.remove(bridge.host);
 			mNicknameBridgeMap.remove(bridge.host.getNickname());
 
-			if (bridge.isUsingNetwork()) {
-				connectivityManager.decRef();
-			}
+			connectivityManager.decRef();
 
 			if (bridges.size() == 0 &&
 					mPendingReconnect.size() == 0) {
@@ -488,8 +483,7 @@ public class TerminalManager extends Service implements BridgeDisconnectedListen
 	public void requestReconnect(TerminalBridge bridge) {
 		synchronized (mPendingReconnect) {
 			mPendingReconnect.add(new WeakReference<TerminalBridge>(bridge));
-			if (!bridge.isUsingNetwork() ||
-					connectivityManager.isConnected()) {
+			if (connectivityManager.isConnected()) {
 				reconnectPending();
 			}
 		}
