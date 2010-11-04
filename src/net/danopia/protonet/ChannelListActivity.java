@@ -103,7 +103,7 @@ public class ChannelListActivity extends ListActivity {
 
 		long hostId = this.getIntent().getLongExtra(Intent.EXTRA_TITLE, -1);
 
-		setContentView(R.layout.act_portforwardlist);
+		setContentView(R.layout.act_channellist);
 
 		// connect with hosts database and populate list
 		this.hostdb = new HostDatabase(this);
@@ -116,12 +116,12 @@ public class ChannelListActivity extends ListActivity {
 			if (nickname != null) {
 				this.setTitle(String.format("%s: %s (%s)",
 						resources.getText(R.string.app_name),
-						resources.getText(R.string.title_port_forwards_list),
+						resources.getText(R.string.title_channels_list),
 						nickname));
 			} else {
 				this.setTitle(String.format("%s: %s",
 						resources.getText(R.string.app_name),
-						resources.getText(R.string.title_port_forwards_list)));
+						resources.getText(R.string.title_channels_list)));
 			}
 		}
 
@@ -152,7 +152,7 @@ public class ChannelListActivity extends ListActivity {
 						hostBridge.disableChannel(pfb);
 					else {
 						if (!hostBridge.enableChannel(pfb))
-							Toast.makeText(ChannelListActivity.this, getString(R.string.portforward_problem), Toast.LENGTH_LONG).show();
+							Toast.makeText(ChannelListActivity.this, getString(R.string.channel_problem), Toast.LENGTH_LONG).show();
 					}
 
 					updateHandler.sendEmptyMessage(-1);
@@ -167,16 +167,16 @@ public class ChannelListActivity extends ListActivity {
 	public boolean onCreateOptionsMenu(Menu menu) {
 		super.onCreateOptionsMenu(menu);
 
-		MenuItem add = menu.add(R.string.portforward_menu_add);
+		MenuItem add = menu.add(R.string.channel_menu_add);
 		add.setIcon(android.R.drawable.ic_menu_add);
 		add.setOnMenuItemClickListener(new OnMenuItemClickListener() {
 			public boolean onMenuItemClick(MenuItem item) {
 				// build dialog to prompt user about updating
-				final View portForwardView = inflater.inflate(R.layout.dia_portforward, null, false);
+				final View portForwardView = inflater.inflate(R.layout.dia_channel, null, false);
 
 				new AlertDialog.Builder(ChannelListActivity.this)
 					.setView(portForwardView)
-					.setPositiveButton(R.string.portforward_pos, new DialogInterface.OnClickListener() {
+					.setPositiveButton(R.string.channel_pos, new DialogInterface.OnClickListener() {
 						public void onClick(DialogInterface dialog, int which) {
 							try {
 								final EditText nicknameEdit = (EditText) portForwardView.findViewById(R.id.nickname);
@@ -219,10 +219,10 @@ public class ChannelListActivity extends ListActivity {
 
 		menu.setHeaderTitle(pfb.getNickname());
 
-		MenuItem edit = menu.add(R.string.portforward_edit);
+		MenuItem edit = menu.add(R.string.channel_edit);
 		edit.setOnMenuItemClickListener(new OnMenuItemClickListener() {
 			public boolean onMenuItemClick(MenuItem item) {
-				final View editTunnelView = inflater.inflate(R.layout.dia_portforward, null, false);
+				final View editTunnelView = inflater.inflate(R.layout.dia_channel, null, false);
 
 				final EditText nicknameEdit = (EditText) editTunnelView.findViewById(R.id.nickname);
 				nicknameEdit.setText(pfb.getNickname());
@@ -267,7 +267,7 @@ public class ChannelListActivity extends ListActivity {
 			}
 		});
 
-		MenuItem delete = menu.add(R.string.portforward_delete);
+		MenuItem delete = menu.add(R.string.channel_delete);
 		delete.setOnMenuItemClickListener(new OnMenuItemClickListener() {
 			public boolean onMenuItemClick(MenuItem item) {
 				// prompt user to make sure they really want this
@@ -310,12 +310,12 @@ public class ChannelListActivity extends ListActivity {
 			this.channels = this.hostdb.getChannelsForHost(host);
 		}
 
-		PortForwardAdapter adapter = new PortForwardAdapter(this, channels);
+		ChannelAdapter adapter = new ChannelAdapter(this, channels);
 
 		this.setListAdapter(adapter);
 	}
 
-	class PortForwardAdapter extends ArrayAdapter<ChannelBean> {
+	class ChannelAdapter extends ArrayAdapter<ChannelBean> {
 		class ViewHolder {
 			public TextView nickname;
 			public TextView caption;
@@ -323,8 +323,8 @@ public class ChannelListActivity extends ListActivity {
 
 		private List<ChannelBean> portForwards;
 
-		public PortForwardAdapter(Context context, List<ChannelBean> portForwards) {
-			super(context, R.layout.item_portforward, portForwards);
+		public ChannelAdapter(Context context, List<ChannelBean> portForwards) {
+			super(context, R.layout.item_channel, portForwards);
 
 			this.portForwards = portForwards;
 		}
@@ -334,7 +334,7 @@ public class ChannelListActivity extends ListActivity {
 			ViewHolder holder;
 
 			if (convertView == null) {
-				convertView = inflater.inflate(R.layout.item_portforward, null, false);
+				convertView = inflater.inflate(R.layout.item_channel, null, false);
 
 				holder = new ViewHolder();
 				holder.nickname = (TextView)convertView.findViewById(android.R.id.text1);

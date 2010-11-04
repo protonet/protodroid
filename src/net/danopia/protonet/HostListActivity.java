@@ -26,8 +26,6 @@ import net.danopia.protonet.transport.TransportFactory;
 import net.danopia.protonet.util.HostDatabase;
 import net.danopia.protonet.util.PreferenceConstants;
 import net.danopia.protonet.util.UpdateHelper;
-
-
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.app.ListActivity;
@@ -321,7 +319,6 @@ public class HostListActivity extends ListActivity {
 
 	@Override
 	public void onCreateContextMenu(ContextMenu menu, View v, ContextMenu.ContextMenuInfo menuInfo) {
-
 		// create menu to handle hosts
 
 		// create menu to handle deleting and sharing lists
@@ -352,7 +349,7 @@ public class HostListActivity extends ListActivity {
 			}
 		});
 
-		MenuItem portForwards = menu.add(R.string.list_host_portforwards);
+		MenuItem portForwards = menu.add(R.string.list_host_channels);
 		portForwards.setOnMenuItemClickListener(new OnMenuItemClickListener() {
 			public boolean onMenuItemClick(MenuItem item) {
 				Intent intent = new Intent(HostListActivity.this, ChannelListActivity.class);
@@ -361,8 +358,6 @@ public class HostListActivity extends ListActivity {
 				return true;
 			}
 		});
-		if (!TransportFactory.canForwardPorts(host.getProtocol()))
-			portForwards.setEnabled(false);
 
 		MenuItem delete = menu.add(R.string.list_host_delete);
 		delete.setOnMenuItemClickListener(new OnMenuItemClickListener() {

@@ -27,7 +27,7 @@
 	<!-- Window title for the Pubkeys List -->
 	<string name="title_pubkey_list">"Pubkeys"</string>
 	<!-- Window title for the Channels List -->
-	<string name="title_port_forwards_list">"Channels"</string>
+	<string name="title_channels_list">"Channels"</string>
 	<!-- Window title when editing host details -->
 	<string name="title_host_editor">"Edit Host"</string>
 	<!-- Window title for Help index -->

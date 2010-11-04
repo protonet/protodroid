@@ -51,7 +51,7 @@
 
 		<TableRow>
 			<TextView
-				android:text="@string/prompt_source_port"
+				android:text="@string/prompt_uuid"
 				android:paddingRight="10dip"
 				android:gravity="right|center_vertical"
 				android:textAppearance="?android:attr/textAppearanceMedium"
