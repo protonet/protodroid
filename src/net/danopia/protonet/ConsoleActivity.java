@@ -17,9 +17,6 @@
 
 package net.danopia.protonet;
 
-import java.lang.ref.WeakReference;
-
-import net.danopia.protonet.service.PromptHelper;
 import net.danopia.protonet.service.TerminalBridge;
 import net.danopia.protonet.service.TerminalManager;
 import net.danopia.protonet.util.PreferenceConstants;
@@ -29,7 +26,6 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.ServiceConnection;
 import android.content.SharedPreferences;
-import android.content.pm.ActivityInfo;
 import android.content.res.Configuration;
 import android.media.AudioManager;
 import android.net.Uri;
@@ -38,10 +34,8 @@ import android.os.Handler;
 import android.os.IBinder;
 import android.os.Message;
 import android.preference.PreferenceManager;
-import android.text.ClipboardManager;
 import android.util.Log;
 import android.view.GestureDetector;
-import android.view.KeyEvent;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -50,19 +44,11 @@ import android.view.View;
 import android.view.ViewConfiguration;
 import android.view.WindowManager;
 import android.view.MenuItem.OnMenuItemClickListener;
-import android.view.View.OnClickListener;
-import android.view.View.OnKeyListener;
 import android.view.animation.Animation;
 import android.view.animation.AnimationUtils;
-import android.view.inputmethod.InputMethodManager;
-import android.widget.AdapterView;
-import android.widget.Button;
-import android.widget.EditText;
-import android.widget.ImageView;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
 import android.widget.ViewFlipper;
-import android.widget.AdapterView.OnItemClickListener;
 
 import com.nullwire.trace.ExceptionHandler;
 
@@ -70,10 +56,6 @@ public class ConsoleActivity extends Activity {
 	public final static String TAG = "ConnectBot.ConsoleActivity";
 
 	protected static final int REQUEST_EDIT = 1;
-
-	private static final int CLICK_TIME = 400;
-	private static final float MAX_CLICK_DISTANCE = 25f;
-	private static final int KEYBOARD_DISPLAY_TIME = 1500;
 
 	// Direction to shift the ViewFlipper
 	private static final int SHIFT_LEFT = 0;
@@ -87,32 +69,17 @@ public class ConsoleActivity extends Activity {
 
 	protected Uri requested;
 
-	protected ClipboardManager clipboard;
-	private RelativeLayout stringPromptGroup;
-	protected EditText stringPrompt;
-	private TextView stringPromptInstructions;
-
-	private RelativeLayout booleanPromptGroup;
-	private TextView booleanPrompt;
-	private Button booleanYes, booleanNo;
-
 	private TextView empty;
 
 	private Animation slide_left_in, slide_left_out, slide_right_in, slide_right_out, fade_stay_hidden, fade_out_delayed;
 
-	private Animation keyboard_fade_in, keyboard_fade_out;
 	private float lastX, lastY;
 
-	private InputMethodManager inputManager;
+	private MenuItem disconnect, channel;
 
-	private MenuItem disconnect, copy, paste, portForward, resize, urlscan;
-
-	protected TerminalBridge copySource = null;
 	private int lastTouchRow, lastTouchCol;
 
 	private Handler handler = new Handler();
-
-	private ImageView mKeyboardButton;
 
 	private ServiceConnection connection = new ServiceConnection() {
 		public void onServiceConnected(ComponentName className, IBinder service) {
@@ -164,14 +131,6 @@ public class ConsoleActivity extends Activity {
 			flip.removeAllViews();
 			updateEmptyVisible();
 			bound = null;
-		}
-	};
-
-	protected Handler promptHandler = new Handler() {
-		@Override
-		public void handleMessage(Message msg) {
-			// someone below us requested to display a prompt
-			updatePromptVisible();
 		}
 	};
 
@@ -227,17 +186,6 @@ public class ConsoleActivity extends Activity {
 		return view.findViewById(id);
 	}
 
-	protected PromptHelper getCurrentPromptHelper() {
-		View view = findCurrentView(R.id.console_flip);
-		if(!(view instanceof TerminalView)) return null;
-		return ((TerminalView)view).bridge.promptHelper;
-	}
-
-	protected void hideAllPrompts() {
-		stringPromptGroup.setVisibility(View.GONE);
-		booleanPromptGroup.setVisibility(View.GONE);
-	}
-
 	@Override
 	public void onCreate(Bundle icicle) {
 		super.onCreate(icicle);
@@ -246,7 +194,6 @@ public class ConsoleActivity extends Activity {
 
 		ExceptionHandler.register(this);
 
-		clipboard = (ClipboardManager)getSystemService(CLIPBOARD_SERVICE);
 		prefs = PreferenceManager.getDefaultSharedPreferences(this);
 
 		// hide status bar if requested by user
@@ -266,80 +213,11 @@ public class ConsoleActivity extends Activity {
 		flip = (ViewFlipper)findViewById(R.id.console_flip);
 		empty = (TextView)findViewById(android.R.id.empty);
 
-		stringPromptGroup = (RelativeLayout) findViewById(R.id.console_password_group);
-		stringPromptInstructions = (TextView) findViewById(R.id.console_password_instructions);
-		stringPrompt = (EditText)findViewById(R.id.console_password);
-		stringPrompt.setOnKeyListener(new OnKeyListener() {
-			public boolean onKey(View v, int keyCode, KeyEvent event) {
-				if(event.getAction() == KeyEvent.ACTION_UP) return false;
-				if(keyCode != KeyEvent.KEYCODE_ENTER) return false;
-
-				// pass collected password down to current terminal
-				String value = stringPrompt.getText().toString();
-
-				PromptHelper helper = getCurrentPromptHelper();
-				if(helper == null) return false;
-				helper.setResponse(value);
-
-				// finally clear password for next user
-				stringPrompt.setText("");
-				updatePromptVisible();
-
-				return true;
-			}
-		});
-
-		booleanPromptGroup = (RelativeLayout) findViewById(R.id.console_boolean_group);
-		booleanPrompt = (TextView)findViewById(R.id.console_prompt);
-
-		booleanYes = (Button)findViewById(R.id.console_prompt_yes);
-		booleanYes.setOnClickListener(new OnClickListener() {
-			public void onClick(View v) {
-				PromptHelper helper = getCurrentPromptHelper();
-				if(helper == null) return;
-				helper.setResponse(Boolean.TRUE);
-				updatePromptVisible();
-			}
-		});
-
-		booleanNo = (Button)findViewById(R.id.console_prompt_no);
-		booleanNo.setOnClickListener(new OnClickListener() {
-			public void onClick(View v) {
-				PromptHelper helper = getCurrentPromptHelper();
-				if(helper == null) return;
-				helper.setResponse(Boolean.FALSE);
-				updatePromptVisible();
-			}
-		});
-
 		// preload animations for terminal switching
 		slide_left_in = AnimationUtils.loadAnimation(this, R.anim.slide_left_in);
 		slide_left_out = AnimationUtils.loadAnimation(this, R.anim.slide_left_out);
 		slide_right_in = AnimationUtils.loadAnimation(this, R.anim.slide_right_in);
 		slide_right_out = AnimationUtils.loadAnimation(this, R.anim.slide_right_out);
-
-		fade_out_delayed = AnimationUtils.loadAnimation(this, R.anim.fade_out_delayed);
-		fade_stay_hidden = AnimationUtils.loadAnimation(this, R.anim.fade_stay_hidden);
-
-		// Preload animation for keyboard button
-		keyboard_fade_in = AnimationUtils.loadAnimation(this, R.anim.keyboard_fade_in);
-		keyboard_fade_out = AnimationUtils.loadAnimation(this, R.anim.keyboard_fade_out);
-
-		inputManager = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
-
-		final RelativeLayout keyboardGroup = (RelativeLayout) findViewById(R.id.keyboard_group);
-
-		mKeyboardButton = (ImageView) findViewById(R.id.button_keyboard);
-		mKeyboardButton.setOnClickListener(new OnClickListener() {
-			public void onClick(View view) {
-				View flip = findCurrentView(R.id.console_flip);
-				if (flip == null)
-					return;
-
-				inputManager.showSoftInput(flip, InputMethodManager.SHOW_FORCED);
-				keyboardGroup.setVisibility(View.GONE);
-			}
-		});
 
 		// detect fling gestures to switch between terminals
 		final GestureDetector detect = new GestureDetector(new GestureDetector.SimpleOnGestureListener() {
@@ -429,31 +307,6 @@ public class ConsoleActivity extends Activity {
 		});
 	}
 
-	/**
-	 *
-	 */
-	private void configureOrientation() {
-		String rotateDefault;
-		if (getResources().getConfiguration().keyboard == Configuration.KEYBOARD_NOKEYS)
-			rotateDefault = PreferenceConstants.ROTATION_PORTRAIT;
-		else
-			rotateDefault = PreferenceConstants.ROTATION_LANDSCAPE;
-
-		String rotate = prefs.getString(PreferenceConstants.ROTATION, rotateDefault);
-		if (PreferenceConstants.ROTATION_DEFAULT.equals(rotate))
-			rotate = rotateDefault;
-
-		// request a forced orientation if requested by user
-		if (PreferenceConstants.ROTATION_LANDSCAPE.equals(rotate)) {
-			setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE);
-		} else if (PreferenceConstants.ROTATION_PORTRAIT.equals(rotate)) {
-			setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
-		} else {
-			setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED);
-		}
-	}
-
-
 	@Override
 	public boolean onCreateOptionsMenu(Menu menu) {
 		super.onCreateOptionsMenu(menu);
@@ -488,11 +341,11 @@ public class ConsoleActivity extends Activity {
 			}
 		});
 
-		portForward = menu.add(R.string.console_menu_portforwards);
-		portForward.setAlphabeticShortcut('f');
-		portForward.setIcon(android.R.drawable.ic_menu_manage);
-		portForward.setEnabled(sessionOpen);
-		portForward.setOnMenuItemClickListener(new OnMenuItemClickListener() {
+		channel = menu.add(R.string.console_menu_channels);
+		channel.setAlphabeticShortcut('f');
+		channel.setIcon(android.R.drawable.ic_menu_manage);
+		channel.setEnabled(sessionOpen);
+		channel.setOnMenuItemClickListener(new OnMenuItemClickListener() {
 			public boolean onMenuItemClick(MenuItem item) {
 				TerminalView terminalView = (TerminalView) findCurrentView(R.id.console_flip);
 				TerminalBridge bridge = terminalView.bridge;
@@ -529,11 +382,7 @@ public class ConsoleActivity extends Activity {
 			disconnect.setTitle(R.string.list_host_disconnect);
 		else
 			disconnect.setTitle(R.string.console_menu_close);
-		copy.setEnabled(activeTerminal);
-		paste.setEnabled(clipboard.hasText() && sessionOpen);
-		portForward.setEnabled(sessionOpen);
-		urlscan.setEnabled(activeTerminal);
-		resize.setEnabled(sessionOpen);
+		channel.setEnabled(sessionOpen);
 
 		return true;
 	}
@@ -572,8 +421,6 @@ public class ConsoleActivity extends Activity {
 		} else {
 			getWindow().clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
 		}
-
-		configureOrientation();
 	}
 
 	/* (non-Javadoc)
@@ -662,8 +509,6 @@ public class ConsoleActivity extends Activity {
 				if (overlay != null)
 					overlay.startAnimation(fade_out_delayed);
 			}
-
-			updatePromptVisible();
 		}
 	}
 
@@ -687,76 +532,6 @@ public class ConsoleActivity extends Activity {
 		empty.setVisibility((flip.getChildCount() == 0) ? View.VISIBLE : View.GONE);
 	}
 
-	/**
-	 * Show any prompts requested by the currently visible {@link TerminalView}.
-	 */
-	protected void updatePromptVisible() {
-		// check if our currently-visible terminalbridge is requesting any prompt services
-		View view = findCurrentView(R.id.console_flip);
-
-		// Hide all the prompts in case a prompt request was canceled
-		hideAllPrompts();
-
-		if(!(view instanceof TerminalView)) {
-			// we dont have an active view, so hide any prompts
-			return;
-		}
-
-		PromptHelper prompt = ((TerminalView)view).bridge.promptHelper;
-		if(String.class.equals(prompt.promptRequested)) {
-			stringPromptGroup.setVisibility(View.VISIBLE);
-
-			String instructions = prompt.promptInstructions;
-			if (instructions != null && instructions.length() > 0) {
-				stringPromptInstructions.setVisibility(View.VISIBLE);
-				stringPromptInstructions.setText(instructions);
-			} else
-				stringPromptInstructions.setVisibility(View.GONE);
-			stringPrompt.setText("");
-			stringPrompt.setHint(prompt.promptHint);
-			stringPrompt.requestFocus();
-
-		} else if(Boolean.class.equals(prompt.promptRequested)) {
-			booleanPromptGroup.setVisibility(View.VISIBLE);
-			booleanPrompt.setText(prompt.promptHint);
-			booleanYes.requestFocus();
-
-		} else {
-			hideAllPrompts();
-			view.requestFocus();
-		}
-	}
-
-	private class URLItemListener implements OnItemClickListener {
-		private WeakReference<Context> contextRef;
-
-		URLItemListener(Context context) {
-			this.contextRef = new WeakReference<Context>(context);
-		}
-
-		public void onItemClick(AdapterView<?> arg0, View view, int position, long id) {
-			Context context = contextRef.get();
-
-			if (context == null)
-				return;
-
-			try {
-				TextView urlView = (TextView) view;
-
-				String url = urlView.getText().toString();
-				if (url.indexOf("://") < 0)
-					url = "http://" + url;
-
-				Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(url));
-				context.startActivity(intent);
-			} catch (Exception e) {
-				Log.e(TAG, "couldn't open URL", e);
-				// We should probably tell the user that we couldn't find a handler...
-			}
-		}
-
-	}
-
 	@Override
 	public void onConfigurationChanged(Configuration newConfig) {
 		super.onConfigurationChanged(newConfig);
@@ -764,8 +539,6 @@ public class ConsoleActivity extends Activity {
 		Log.d(TAG, String.format("onConfigurationChanged; requestedOrientation=%d, newConfig.orientation=%d", getRequestedOrientation(), newConfig.orientation));
 		if (bound != null) {
 			bound.hardKeyboardHidden = (newConfig.hardKeyboardHidden == Configuration.HARDKEYBOARDHIDDEN_YES);
-
-			mKeyboardButton.setVisibility(bound.hardKeyboardHidden ? View.VISIBLE : View.GONE);
 		}
 	}
 
@@ -776,9 +549,6 @@ public class ConsoleActivity extends Activity {
 	 * @return the child index of the new view in the ViewFlipper
 	 */
 	private int addNewTerminalView(TerminalBridge bridge) {
-		// let them know about our prompt handler services
-		bridge.promptHelper.setHandler(promptHandler);
-
 		// inflate each terminal view
 		RelativeLayout view = (RelativeLayout)inflater.inflate(R.layout.item_terminal, flip, false);
 
@@ -836,7 +606,6 @@ public class ConsoleActivity extends Activity {
 				Log.d(TAG, "View went away when we were about to display it", npe);
 			}
 
-			updatePromptVisible();
 			updateEmptyVisible();
 		}
 	}

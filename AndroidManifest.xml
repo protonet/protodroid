@@ -25,8 +25,7 @@
 			<intent-filter>
 				<action android:name="android.intent.action.PICK" />
 				<category android:name="android.intent.category.DEFAULT" />
-				<data android:scheme="ssh" />
-				<data android:scheme="telnet" />
+				<data android:scheme="ptn" />
 			</intent-filter>
 		</activity>
 
@@ -49,10 +48,7 @@
 				<action android:name="android.intent.action.VIEW" />
 				<category android:name="android.intent.category.DEFAULT" />
 				<category android:name="android.intent.category.BROWSABLE" />
-				<data android:scheme="ssh" />
-				<data android:scheme="telnet" />
-				<!-- format:  ssh://user@host:port/#nickname  -->
-				<!-- format:  telnet://host:port/#nickname  -->
+				<data android:scheme="ptn" />
 			</intent-filter>
 		</activity>
 
