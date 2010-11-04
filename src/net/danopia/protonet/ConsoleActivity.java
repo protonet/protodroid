@@ -50,8 +50,6 @@ import android.widget.RelativeLayout;
 import android.widget.TextView;
 import android.widget.ViewFlipper;
 
-import com.nullwire.trace.ExceptionHandler;
-
 public class ConsoleActivity extends Activity {
 	public final static String TAG = "ConnectBot.ConsoleActivity";
 
@@ -191,8 +189,6 @@ public class ConsoleActivity extends Activity {
 		super.onCreate(icicle);
 
 		this.setContentView(R.layout.act_console);
-
-		ExceptionHandler.register(this);
 
 		prefs = PreferenceManager.getDefaultSharedPreferences(this);
 
