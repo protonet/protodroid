@@ -17,11 +17,6 @@
 
 package net.danopia.protonet.service;
 
-import net.danopia.protonet.transport.AbsTransport;
-import net.danopia.protonet.util.EastAsianWidth;
-
-import org.apache.harmony.niochar.charset.additional.IBM437;
-
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.CharBuffer;
@@ -30,6 +25,10 @@ import java.nio.charset.CharsetDecoder;
 import java.nio.charset.CoderResult;
 import java.nio.charset.CodingErrorAction;
 
+import net.danopia.protonet.transport.AbsTransport;
+import net.danopia.protonet.util.EastAsianWidth;
+
+import org.apache.harmony.niochar.charset.additional.IBM437;
 
 import android.util.Log;
 import de.mud.terminal.vt320;
@@ -46,7 +45,6 @@ public class Relay implements Runnable {
 
 	private Charset currentCharset;
 	private CharsetDecoder decoder;
-	private boolean isLegacyEastAsian = false;
 
 	private AbsTransport transport;
 
