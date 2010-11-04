@@ -74,18 +74,6 @@
 		<item>Never</item>
 	</string-array>
 
-	<string-array name="list_keymode" translatable="false">
-		<item>@string/list_keymode_right</item>
-		<item>@string/list_keymode_left</item>
-		<item>@string/list_keymode_none</item>
-	</string-array>
-
-	<string-array name="list_keymode_values" translatable="false">
-		<item>Use right-side keys</item>
-		<item>Use left-side keys</item>
-		<item>none</item>
-	</string-array>
-
 	<string-array name="list_wizard_topics" translatable="false">
 		<item>Hints</item>
 		<item>PhysicalKeyboard</item>

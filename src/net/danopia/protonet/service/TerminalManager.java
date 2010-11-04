@@ -109,7 +109,6 @@ public class TerminalManager extends Service implements BridgeDisconnectedListen
 		hostdb = new HostDatabase(this);
 
 		vibrator = (Vibrator) getSystemService(Context.VIBRATOR_SERVICE);
-		wantKeyVibration = prefs.getBoolean(PreferenceConstants.BUMPY_ARROWS, true);
 
 		wantBellVibration = prefs.getBoolean(PreferenceConstants.BELL_VIBRATE, true);
 		enableMediaPlayer();
@@ -435,9 +434,6 @@ public class TerminalManager extends Service implements BridgeDisconnectedListen
 		} else if (PreferenceConstants.BELL_VIBRATE.equals(key)) {
 			wantBellVibration = sharedPreferences.getBoolean(
 					PreferenceConstants.BELL_VIBRATE, true);
-		} else if (PreferenceConstants.BUMPY_ARROWS.equals(key)) {
-			wantKeyVibration = sharedPreferences.getBoolean(
-					PreferenceConstants.BUMPY_ARROWS, true);
 		} else if (PreferenceConstants.WIFI_LOCK.equals(key)) {
 			final boolean lockingWifi = prefs.getBoolean(PreferenceConstants.WIFI_LOCK, true);
 			connectivityManager.setWantWifiLock(lockingWifi);

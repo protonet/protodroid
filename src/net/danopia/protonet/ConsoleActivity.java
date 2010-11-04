@@ -196,12 +196,6 @@ public class ConsoleActivity extends Activity {
 
 		prefs = PreferenceManager.getDefaultSharedPreferences(this);
 
-		// hide status bar if requested by user
-		if (prefs.getBoolean(PreferenceConstants.FULLSCREEN, false)) {
-			getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN,
-					WindowManager.LayoutParams.FLAG_FULLSCREEN);
-		}
-
 		// TODO find proper way to disable volume key beep if it exists.
 		setVolumeControlStream(AudioManager.STREAM_MUSIC);
 

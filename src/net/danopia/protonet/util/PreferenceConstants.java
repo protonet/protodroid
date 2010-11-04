@@ -28,7 +28,6 @@ public class PreferenceConstants {
 	public static final boolean PRE_FROYO = PRE_ECLAIR ? true :
 		(Integer.parseInt(Build.VERSION.SDK) <= 7);
 
-	public static final String MEMKEYS = "memkeys";
 	public static final String UPDATE = "update";
 
 	public static final String UPDATE_DAILY = "Daily";
@@ -39,21 +38,12 @@ public class PreferenceConstants {
 
 	public static final String SCROLLBACK = "scrollback";
 
-	public static final String EMULATION = "emulation";
-
 	public static final String ROTATION = "rotation";
 
 	public static final String ROTATION_DEFAULT = "Default";
 	public static final String ROTATION_LANDSCAPE = "Force landscape";
 	public static final String ROTATION_PORTRAIT = "Force portrait";
 	public static final String ROTATION_AUTOMATIC = "Automatic";
-
-	public static final String FULLSCREEN = "fullscreen";
-
-	public static final String KEYMODE = "keymode";
-
-	public static final String KEYMODE_RIGHT = "Use right-side keys";
-	public static final String KEYMODE_LEFT = "Use left-side keys";
 
 	public static final String CAMERA = "camera";
 
@@ -65,8 +55,6 @@ public class PreferenceConstants {
 	public static final String KEEP_ALIVE = "keepalive";
 
 	public static final String WIFI_LOCK = "wifilock";
-
-	public static final String BUMPY_ARROWS = "bumpyarrows";
 
 	public static final String EULA = "eula";
 
