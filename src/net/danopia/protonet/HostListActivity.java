@@ -58,7 +58,6 @@ import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.ImageView;
 import android.widget.ListView;
-import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.AdapterView.OnItemClickListener;
 
@@ -81,7 +80,6 @@ public class HostListActivity extends ListActivity {
 
 	private MenuItem sortlast;
 
-	private Spinner transportSpinner;
 	private TextView quickconnect;
 
 	private SharedPreferences prefs = null;

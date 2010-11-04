@@ -63,12 +63,6 @@ public class TerminalBridge {
 
 	private final List<String> localOutput;
 
-	/**
-	 * Flag indicating if we should perform a full-screen redraw during our next
-	 * rendering pass.
-	 */
-	private boolean fullRedraw = false;
-
 	public PromptHelper promptHelper;
 
 	protected BridgeDisconnectedListener disconnectListener = null;
