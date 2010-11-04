@@ -24,13 +24,13 @@ import java.nio.charset.Charset;
 import java.nio.charset.CharsetDecoder;
 import java.nio.charset.CoderResult;
 import java.nio.charset.CodingErrorAction;
+import java.util.ArrayList;
 
 import net.danopia.protonet.util.EastAsianWidth;
 
 import org.apache.harmony.niochar.charset.additional.IBM437;
 
 import android.util.Log;
-import de.mud.terminal.vt320;
 
 /**
  * @author Kenny Root
@@ -47,7 +47,7 @@ public class Relay implements Runnable {
 
 	private Transport transport;
 
-	private vt320 buffer;
+	private ArrayList<String> buffer;
 
 	private ByteBuffer byteBuffer;
 	private CharBuffer charBuffer;
@@ -55,7 +55,7 @@ public class Relay implements Runnable {
 	private byte[] byteArray;
 	private char[] charArray;
 
-	public Relay(TerminalBridge bridge, Transport transport, vt320 buffer, String encoding) {
+	public Relay(TerminalBridge bridge, Transport transport, ArrayList<String> buffer, String encoding) {
 		setCharset(encoding);
 		this.bridge = bridge;
 		this.transport = transport;
@@ -110,7 +110,7 @@ public class Relay implements Runnable {
 
 		try {
 			while (true) {
-				charWidth = bridge.charWidth;
+				charWidth = 8;
 				bytesToRead = byteBuffer.capacity() - byteBuffer.limit();
 				offset = byteBuffer.arrayOffset() + byteBuffer.limit();
 				bytesRead = transport.read(byteArray, offset, bytesToRead);
@@ -131,8 +131,7 @@ public class Relay implements Runnable {
 
 					offset = charBuffer.position();
 
-					measurer.measure(charArray, 0, offset, wideAttribute, bridge.defaultPaint, charWidth);
-					buffer.putString(charArray, wideAttribute, 0, charBuffer.position());
+					buffer.add(new String(charArray, 0, charBuffer.position()));
 					charBuffer.clear();
 					bridge.redraw();
 				}

@@ -17,17 +17,9 @@
 
 package net.danopia.protonet;
 
-import net.danopia.protonet.bean.SelectionArea;
 import net.danopia.protonet.service.TerminalBridge;
-import net.danopia.protonet.service.TerminalKeyListener;
 import android.app.Activity;
 import android.content.Context;
-import android.graphics.Canvas;
-import android.graphics.Matrix;
-import android.graphics.Paint;
-import android.graphics.Path;
-import android.graphics.PixelXorXfermode;
-import android.graphics.RectF;
 import android.view.KeyEvent;
 import android.view.View;
 import android.view.ViewGroup.LayoutParams;
@@ -35,7 +27,6 @@ import android.view.inputmethod.BaseInputConnection;
 import android.view.inputmethod.EditorInfo;
 import android.view.inputmethod.InputConnection;
 import android.widget.Toast;
-import de.mud.terminal.VDUBuffer;
 
 /**
  * User interface {@link View} for showing a TerminalBridge in an
@@ -48,15 +39,6 @@ public class TerminalView extends View {
 
 	private final Context context;
 	public final TerminalBridge bridge;
-	private final Paint paint;
-	private final Paint cursorPaint;
-	private final Paint cursorStrokePaint;
-
-	// Cursor paints to distinguish modes
-	private Path ctrlCursor, altCursor, shiftCursor;
-	private RectF tempSrc, tempDst;
-	private Matrix scaleMatrix;
-	private static final Matrix.ScaleToFit scaleType = Matrix.ScaleToFit.FILL;
 
 	private Toast notification = null;
 	private String lastNotification = null;
@@ -67,150 +49,15 @@ public class TerminalView extends View {
 
 		this.context = context;
 		this.bridge = bridge;
-		paint = new Paint();
 
 		setLayoutParams(new LayoutParams(LayoutParams.FILL_PARENT, LayoutParams.FILL_PARENT));
 		setFocusable(true);
 		setFocusableInTouchMode(true);
-
-		cursorPaint = new Paint();
-		cursorPaint.setColor(bridge.color[bridge.defaultFg]);
-		cursorPaint.setXfermode(new PixelXorXfermode(bridge.color[bridge.defaultBg]));
-		cursorPaint.setAntiAlias(true);
-
-		cursorStrokePaint = new Paint(cursorPaint);
-		cursorStrokePaint.setStrokeWidth(0.1f);
-		cursorStrokePaint.setStyle(Paint.Style.STROKE);
-
-		/*
-		 * Set up our cursor indicators on a 1x1 Path object which we can later
-		 * transform to our character width and height
-		 */
-		// TODO make this into a resource somehow
-		shiftCursor = new Path();
-		shiftCursor.lineTo(0.5f, 0.33f);
-		shiftCursor.lineTo(1.0f, 0.0f);
-
-		altCursor = new Path();
-		altCursor.moveTo(0.0f, 1.0f);
-		altCursor.lineTo(0.5f, 0.66f);
-		altCursor.lineTo(1.0f, 1.0f);
-
-		ctrlCursor = new Path();
-		ctrlCursor.moveTo(0.0f, 0.25f);
-		ctrlCursor.lineTo(1.0f, 0.5f);
-		ctrlCursor.lineTo(0.0f, 0.75f);
-
-		// For creating the transform when the terminal resizes
-		tempSrc = new RectF();
-		tempSrc.set(0.0f, 0.0f, 1.0f, 1.0f);
-		tempDst = new RectF();
-		scaleMatrix = new Matrix();
-
-		// connect our view up to the bridge
-		setOnKeyListener(bridge.getKeyHandler());
 	}
 
 	public void destroy() {
 		// tell bridge to destroy its bitmap
 		bridge.parentDestroyed();
-	}
-
-	@Override
-	protected void onSizeChanged(int w, int h, int oldw, int oldh) {
-		super.onSizeChanged(w, h, oldw, oldh);
-
-		scaleCursors();
-	}
-
-	public void onFontSizeChanged(float size) {
-		scaleCursors();
-	}
-
-	private void scaleCursors() {
-		// Create a scale matrix to scale our 1x1 representation of the cursor
-		tempDst.set(0.0f, 0.0f, bridge.charWidth, bridge.charHeight);
-		scaleMatrix.setRectToRect(tempSrc, tempDst, scaleType);
-	}
-
-	@Override
-	public void onDraw(Canvas canvas) {
-		if(bridge.bitmap != null) {
-			// draw the bitmap
-			bridge.onDraw();
-
-			// draw the bridge bitmap if it exists
-			canvas.drawBitmap(bridge.bitmap, 0, 0, paint);
-
-			// also draw cursor if visible
-			if (bridge.buffer.isCursorVisible()) {
-				int cursorColumn = bridge.buffer.getCursorColumn();
-				final int cursorRow = bridge.buffer.getCursorRow();
-
-				final int columns = bridge.buffer.getColumns();
-
-				if (cursorColumn == columns)
-					cursorColumn = columns - 1;
-
-				if (cursorColumn < 0 || cursorRow < 0)
-					return;
-
-				int currentAttribute = bridge.buffer.getAttributes(
-						cursorColumn, cursorRow);
-				boolean onWideCharacter = (currentAttribute & VDUBuffer.FULLWIDTH) != 0;
-
-				int x = cursorColumn * bridge.charWidth;
-				int y = (bridge.buffer.getCursorRow()
-						+ bridge.buffer.screenBase - bridge.buffer.windowBase)
-						* bridge.charHeight;
-
-				// Save the current clip and translation
-				canvas.save();
-
-				canvas.translate(x, y);
-				canvas.clipRect(0, 0,
-						bridge.charWidth * (onWideCharacter ? 2 : 1),
-						bridge.charHeight);
-				canvas.drawPaint(cursorPaint);
-
-				// Make sure we scale our decorations to the correct size.
-				canvas.concat(scaleMatrix);
-
-				int metaState = bridge.getKeyHandler().getMetaState();
-
-				if ((metaState & TerminalKeyListener.META_SHIFT_ON) != 0)
-					canvas.drawPath(shiftCursor, cursorStrokePaint);
-				else if ((metaState & TerminalKeyListener.META_SHIFT_LOCK) != 0)
-					canvas.drawPath(shiftCursor, cursorPaint);
-
-				if ((metaState & TerminalKeyListener.META_ALT_ON) != 0)
-					canvas.drawPath(altCursor, cursorStrokePaint);
-				else if ((metaState & TerminalKeyListener.META_ALT_LOCK) != 0)
-					canvas.drawPath(altCursor, cursorPaint);
-
-				if ((metaState & TerminalKeyListener.META_CTRL_ON) != 0)
-					canvas.drawPath(ctrlCursor, cursorStrokePaint);
-				else if ((metaState & TerminalKeyListener.META_CTRL_LOCK) != 0)
-					canvas.drawPath(ctrlCursor, cursorPaint);
-
-				// Restore previous clip region
-				canvas.restore();
-			}
-
-			// draw any highlighted area
-			if (bridge.isSelectingForCopy()) {
-				SelectionArea area = bridge.getSelectionArea();
-				canvas.save(Canvas.CLIP_SAVE_FLAG);
-				canvas.clipRect(
-					area.getLeft() * bridge.charWidth,
-					area.getTop() * bridge.charHeight,
-					(area.getRight() + 1) * bridge.charWidth,
-					(area.getBottom() + 1) * bridge.charHeight
-				);
-				canvas.drawPaint(cursorPaint);
-				canvas.restore();
-			}
-		}
 	}
 
 	public void notifyUser(String message) {

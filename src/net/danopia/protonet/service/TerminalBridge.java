@@ -19,25 +19,15 @@ package net.danopia.protonet.service;
 
 import java.io.IOException;
 import java.nio.charset.Charset;
+import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 import net.danopia.protonet.R;
 import net.danopia.protonet.TerminalView;
 import net.danopia.protonet.bean.ChannelBean;
 import net.danopia.protonet.bean.HostBean;
-import net.danopia.protonet.bean.SelectionArea;
-import net.danopia.protonet.util.HostDatabase;
-import android.graphics.Bitmap;
-import android.graphics.Canvas;
-import android.graphics.Paint;
-import android.graphics.Typeface;
 import android.util.Log;
-import de.mud.terminal.VDUBuffer;
-import de.mud.terminal.VDUDisplay;
-import de.mud.terminal.vt320;
 
 
 /**
@@ -49,13 +39,10 @@ import de.mud.terminal.vt320;
  * This class also provides SSH hostkey verification prompting, and password
  * prompting.
  */
-public class TerminalBridge implements VDUDisplay {
+public class TerminalBridge {
 	public final static String TAG = "ConnectBot.TerminalBridge";
 
 	public Integer[] color;
-
-	public int defaultFg = HostDatabase.DEFAULT_FG_COLOR;
-	public int defaultBg = HostDatabase.DEFAULT_BG_COLOR;
 
 	protected final TerminalManager manager;
 
@@ -63,29 +50,16 @@ public class TerminalBridge implements VDUDisplay {
 
 	/* package */ Transport transport;
 
-	final Paint defaultPaint;
-
 	private Relay relay;
 
 	private final int scrollback;
 
-	public Bitmap bitmap = null;
-	public VDUBuffer buffer = null;
+	public ArrayList<String> buffer = null;
 
 	private TerminalView parent = null;
-	private final Canvas canvas = new Canvas();
 
 	private boolean disconnected = false;
 	private boolean awaitingClose = false;
-
-	/* package */ final TerminalKeyListener keyListener;
-
-	private boolean selectingForCopy = false;
-	private final SelectionArea selectionArea;
-
-	public int charWidth = -1;
-	public int charHeight = -1;
-	private int charTop = -1;
 
 	private final List<String> localOutput;
 
@@ -103,31 +77,15 @@ public class TerminalBridge implements VDUDisplay {
 	 * Create a new terminal bridge suitable for unit testing.
 	 */
 	public TerminalBridge() {
-		buffer = new vt320() {
-			@Override
-			public void write(byte[] b) {}
-			@Override
-			public void write(int b) {}
-			@Override
-			public void sendTelnetCommand(byte cmd) {}
-			@Override
-			public void setWindowSize(int c, int r) {}
-			@Override
-			public void debug(String s) {}
-		};
+		buffer = new ArrayList<String>();
 
 		manager = null;
 
-		defaultPaint = new Paint();
-
-		selectionArea = new SelectionArea();
 		scrollback = 1;
 
 		localOutput = new LinkedList<String>();
 
 		transport = null;
-
-		keyListener = new TerminalKeyListener(manager, this, buffer, null);
 	}
 
 	/**
@@ -144,73 +102,13 @@ public class TerminalBridge implements VDUDisplay {
 		// create prompt helper to relay password and hostkey requests up to gui
 		promptHelper = new PromptHelper(this);
 
-		// create our default paint
-		defaultPaint = new Paint();
-		defaultPaint.setAntiAlias(true);
-		defaultPaint.setTypeface(Typeface.MONOSPACE);
-		defaultPaint.setFakeBoldText(true); // more readable?
-
 		localOutput = new LinkedList<String>();
 
 		// create terminal buffer and handle outgoing data
 		// this is probably status reply information
-		buffer = new vt320() {
-			@Override
-			public void debug(String s) {
-				Log.d(TAG, s);
-			}
+		buffer = new ArrayList<String>();
 
-			@Override
-			public void write(byte[] b) {
-				try {
-					if (b != null && transport != null)
-						transport.write(b);
-				} catch (IOException e) {
-					Log.e(TAG, "Problem writing outgoing data in vt320() thread", e);
-				}
-			}
-
-			@Override
-			public void write(int b) {
-				try {
-					if (transport != null)
-						transport.write(b);
-				} catch (IOException e) {
-					Log.e(TAG, "Problem writing outgoing data in vt320() thread", e);
-				}
-			}
-
-			// We don't use telnet sequences.
-			@Override
-			public void sendTelnetCommand(byte cmd) {
-			}
-
-			// We don't want remote to resize our window.
-			@Override
-			public void setWindowSize(int c, int r) {
-			}
-
-			@Override
-			public void beep() {
-				if (parent.isShown())
-					manager.playBeep();
-				else
-					manager.sendActivityNotification(host);
-			}
-		};
-
-		// Don't keep any scrollback if a session is not being opened.
-		if (host.getWantSession())
-			buffer.setBufferSize(scrollback);
-		else
-			buffer.setBufferSize(0);
-
-		resetColors();
-		buffer.setDisplay(this);
-
-		selectionArea = new SelectionArea();
-
-		keyListener = new TerminalKeyListener(manager, this, buffer, host.getEncoding());
+		//buffer.setBufferSize(scrollback);
 	}
 
 	public PromptHelper getPromptHelper() {
@@ -270,7 +168,6 @@ public class TerminalBridge implements VDUDisplay {
 	public void setCharset(String encoding) {
 		if (relay != null)
 			relay.setCharset(encoding);
-		keyListener.setCharset(encoding);
 	}
 
 	/**
@@ -286,7 +183,7 @@ public class TerminalBridge implements VDUDisplay {
 
 			localOutput.add(s);
 
-			((vt320) buffer).putString(s);
+			buffer.add(s);
 		}
 	}
 
@@ -318,13 +215,13 @@ public class TerminalBridge implements VDUDisplay {
 	public void onConnected() {
 		disconnected = false;
 
-		((vt320) buffer).reset();
+		buffer.clear();
 
 		// We no longer need our local output.
 		localOutput.clear();
 
 		// create thread to relay incoming connection data to buffer
-		relay = new Relay(this, transport, (vt320) buffer, host.getEncoding());
+		relay = new Relay(this, transport, buffer, host.getEncoding());
 		Thread relayThread = new Thread(relay);
 		relayThread.setDaemon(true);
 		relayThread.setName("Relay");
@@ -377,7 +274,7 @@ public class TerminalBridge implements VDUDisplay {
 		} else {
 			{
 				final String line = manager.res.getString(R.string.alert_disconnect_msg);
-				((vt320) buffer).putString("\r\n" + line + "\r\n");
+				buffer.add("\r\n" + line + "\r\n");
 			}
 			if (host.getStayConnected()) {
 				manager.requestReconnect(this);
@@ -402,18 +299,6 @@ public class TerminalBridge implements VDUDisplay {
 		}
 	}
 
-	public void setSelectingForCopy(boolean selectingForCopy) {
-		this.selectingForCopy = selectingForCopy;
-	}
-
-	public boolean isSelectingForCopy() {
-		return selectingForCopy;
-	}
-
-	public SelectionArea getSelectionArea() {
-		return selectionArea;
-	}
-
 	public synchronized void tryKeyVibrate() {
 		manager.tryKeyVibrate();
 	}
@@ -424,140 +309,11 @@ public class TerminalBridge implements VDUDisplay {
 	 */
 	public synchronized void parentDestroyed() {
 		parent = null;
-		discardBitmap();
-	}
-
-	private void discardBitmap() {
-		if (bitmap != null)
-			bitmap.recycle();
-		bitmap = null;
-	}
-
-	public void setVDUBuffer(VDUBuffer buffer) {
-		this.buffer = buffer;
-	}
-
-	public VDUBuffer getVDUBuffer() {
-		return buffer;
-	}
-
-	public void onDraw() {
-		int fg, bg;
-		synchronized (buffer) {
-			boolean entireDirty = buffer.update[0] || fullRedraw;
-			boolean isWideCharacter = false;
-
-			// walk through all lines in the buffer
-			for(int l = 0; l < buffer.height; l++) {
-
-				// check if this line is dirty and needs to be repainted
-				// also check for entire-buffer dirty flags
-				if (!entireDirty && !buffer.update[l + 1]) continue;
-
-				// reset dirty flag for this line
-				buffer.update[l + 1] = false;
-
-				// walk through all characters in this line
-				for (int c = 0; c < buffer.width; c++) {
-					int addr = 0;
-					int currAttr = buffer.charAttributes[buffer.windowBase + l][c];
-
-					{
-						int fgcolor = defaultFg;
-
-						// check if foreground color attribute is set
-						if ((currAttr & VDUBuffer.COLOR_FG) != 0)
-							fgcolor = ((currAttr & VDUBuffer.COLOR_FG) >> VDUBuffer.COLOR_FG_SHIFT) - 1;
-
-						if (fgcolor < 8 && (currAttr & VDUBuffer.BOLD) != 0)
-							fg = color[fgcolor + 8];
-						else
-							fg = color[fgcolor];
-					}
-
-					// check if background color attribute is set
-					if ((currAttr & VDUBuffer.COLOR_BG) != 0)
-						bg = color[((currAttr & VDUBuffer.COLOR_BG) >> VDUBuffer.COLOR_BG_SHIFT) - 1];
-					else
-						bg = color[defaultBg];
-
-					// support character inversion by swapping background and foreground color
-					if ((currAttr & VDUBuffer.INVERT) != 0) {
-						int swapc = bg;
-						bg = fg;
-						fg = swapc;
-					}
-
-					// set underlined attributes if requested
-					defaultPaint.setUnderlineText((currAttr & VDUBuffer.UNDERLINE) != 0);
-
-					isWideCharacter = (currAttr & VDUBuffer.FULLWIDTH) != 0;
-
-					if (isWideCharacter)
-						addr++;
-					else {
-						// determine the amount of continuous characters with the same settings and print them all at once
-						while(c + addr < buffer.width
-								&& buffer.charAttributes[buffer.windowBase + l][c + addr] == currAttr) {
-							addr++;
-						}
-					}
-
-					// Save the current clip region
-					canvas.save(Canvas.CLIP_SAVE_FLAG);
-
-					// clear this dirty area with background color
-					defaultPaint.setColor(bg);
-					if (isWideCharacter) {
-						canvas.clipRect(c * charWidth,
-								l * charHeight,
-								(c + 2) * charWidth,
-								(l + 1) * charHeight);
-					} else {
-						canvas.clipRect(c * charWidth,
-								l * charHeight,
-								(c + addr) * charWidth,
-								(l + 1) * charHeight);
-					}
-					canvas.drawPaint(defaultPaint);
-
-					// write the text string starting at 'c' for 'addr' number of characters
-					defaultPaint.setColor(fg);
-					if((currAttr & VDUBuffer.INVISIBLE) == 0)
-						canvas.drawText(buffer.charArray[buffer.windowBase + l], c,
-							addr, c * charWidth, (l * charHeight) - charTop,
-							defaultPaint);
-
-					// Restore the previous clip region
-					canvas.restore();
-
-					// advance to the next text block with different characteristics
-					c += addr - 1;
-					if (isWideCharacter)
-						c++;
-				}
-			}
-
-			// reset entire-buffer flags
-			buffer.update[0] = false;
-		}
-		fullRedraw = false;
 	}
 
 	public void redraw() {
 		if (parent != null)
 			parent.postInvalidate();
-	}
-
-	// We don't have a scroll bar.
-	public void updateScrollBar() {
-	}
-
-	/**
-	 * @return whether underlying transport can forward ports
-	 */
-	public boolean canChannels() {
-		return transport.canChannels();
 	}
 
 	/**
@@ -627,89 +383,5 @@ public class TerminalBridge implements VDUDisplay {
 	 */
 	public boolean isDisconnected() {
 		return disconnected;
-	}
-
-	/* (non-Javadoc)
-	 * @see de.mud.terminal.VDUDisplay#setColor(byte, byte, byte, byte)
-	 */
-	public void setColor(int index, int red, int green, int blue) {
-		// Don't allow the system colors to be overwritten for now. May violate specs.
-		if (index < color.length && index >= 16)
-			color[index] = 0xff000000 | red << 16 | green << 8 | blue;
-	}
-
-	public final void resetColors() {
-		int[] defaults = manager.hostdb.getDefaultColorsForScheme(HostDatabase.DEFAULT_COLOR_SCHEME);
-		defaultFg = defaults[0];
-		defaultBg = defaults[1];
-
-		color = manager.hostdb.getColorsForScheme(HostDatabase.DEFAULT_COLOR_SCHEME);
-	}
-
-	private static Pattern urlPattern = null;
-
-	/**
-	 * @return
-	 */
-	public List<String> scanForURLs() {
-		List<String> urls = new LinkedList<String>();
-
-		if (urlPattern == null) {
-			// based on http://www.ietf.org/rfc/rfc2396.txt
-			String scheme = "[A-Za-z][-+.0-9A-Za-z]*";
-			String unreserved = "[-._~0-9A-Za-z]";
-			String pctEncoded = "%[0-9A-Fa-f]{2}";
-			String subDelims = "[!$&'()*+,;:=]";
-			String userinfo = "(?:" + unreserved + "|" + pctEncoded + "|" + subDelims + "|:)*";
-			String h16 = "[0-9A-Fa-f]{1,4}";
-			String decOctet = "(?:[0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])";
-			String ipv4address = decOctet + "\\." + decOctet + "\\." + decOctet + "\\." + decOctet;
-			String ls32 = "(?:" + h16 + ":" + h16 + "|" + ipv4address + ")";
-			String ipv6address = "(?:(?:" + h16 + "){6}" + ls32 + ")";
-			String ipvfuture = "v[0-9A-Fa-f]+.(?:" + unreserved + "|" + subDelims + "|:)+";
-			String ipLiteral = "\\[(?:" + ipv6address + "|" + ipvfuture + ")\\]";
-			String regName = "(?:" + unreserved + "|" + pctEncoded + "|" + subDelims + ")*";
-			String host = "(?:" + ipLiteral + "|" + ipv4address + "|" + regName + ")";
-			String port = "[0-9]*";
-			String authority = "(?:" + userinfo + "@)?" + host + "(?::" + port + ")?";
-			String pchar = "(?:" + unreserved + "|" + pctEncoded + "|" + subDelims + ")";
-			String segment = pchar + "*";
-			String pathAbempty = "(?:/" + segment + ")*";
-			String segmentNz = pchar + "+";
-			String pathAbsolute = "/(?:" + segmentNz + "(?:/" + segment + ")*)?";
-			String pathRootless = segmentNz + "(?:/" + segment + ")*";
-			String hierPart = "(?://" + authority + pathAbempty + "|" + pathAbsolute + "|" + pathRootless + ")";
-			String query = "(?:" + pchar + "|/|\\?)*";
-			String fragment = "(?:" + pchar + "|/|\\?)*";
-			String uriRegex = scheme + ":" + hierPart + "(?:" + query + ")?(?:#" + fragment + ")?";
-			urlPattern = Pattern.compile(uriRegex);
-		}
-
-		char[] visibleBuffer = new char[buffer.height * buffer.width];
-		for (int l = 0; l < buffer.height; l++)
-			System.arraycopy(buffer.charArray[buffer.windowBase + l], 0,
-					visibleBuffer, l * buffer.width, buffer.width);
-
-		Matcher urlMatcher = urlPattern.matcher(new String(visibleBuffer));
-		while (urlMatcher.find())
-			urls.add(urlMatcher.group());
-
-		return urls;
-	}
-
-	/**
-	 * @return
-	 */
-	public TerminalKeyListener getKeyHandler() {
-		return keyListener;
-	}
-
-	/**
-	 *
-	 */
-	public void resetScrollPosition() {
-		// if we're in scrollback, scroll to bottom of window on input
-		if (buffer.windowBase != buffer.screenBase)
-			buffer.setWindowBase(buffer.screenBase);
 	}
 }
