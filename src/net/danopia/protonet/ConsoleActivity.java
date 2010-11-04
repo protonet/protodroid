@@ -382,7 +382,8 @@ public class ConsoleActivity extends Activity {
 			disconnect.setTitle(R.string.list_host_disconnect);
 		else
 			disconnect.setTitle(R.string.console_menu_close);
-		channel.setEnabled(sessionOpen);
+
+		channel.setEnabled(activeTerminal);
 
 		return true;
 	}
