@@ -35,6 +35,10 @@ import net.danopia.protonet.bean.ChannelBean;
 import net.danopia.protonet.bean.HostBean;
 import net.danopia.protonet.client.Fetcher;
 import net.danopia.protonet.util.HostDatabase;
+
+import org.json.JSONException;
+import org.json.JSONObject;
+
 import android.content.Context;
 import android.net.Uri;
 import android.util.Log;
@@ -185,14 +189,28 @@ public class Transport {
 	public void connect() {
 		try {
 			Fetcher fetcher = new Fetcher("https://" + host.getHostname());
-			String login = fetcher.doLogin(host.getUsername(), "password");
+			String loginData = fetcher.doLogin(host.getUsername(), "password");
 
-			socket = new Socket(host.getHostname(), host.getPort());
+			String token = "";
+			String userId = "";
+			try {
+				JSONObject loginObject = new JSONObject(loginData);
+				token = loginObject.getString("token");
+				userId = loginObject.getString("user_id");
+			} catch (JSONException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+
+			socket = new Socket(host.getHostname(), 5000);
 
 			connected = true;
 
 			is = socket.getInputStream();
 			os = socket.getOutputStream();
+
+			os.write(("{\"operation\":\"authenticate\",\"payload\":{\"user_id\":" + userId + ",\"type\":\"api\",\"token\":\"" + token + "\"}}\0").getBytes(host.getEncoding()));
+			os.write(("{\"operation\":\"tweet\",\"channel_id\":1,\"message\":\"hey from the app\",\"text_extension\":\"\"}\0").getBytes(host.getEncoding()));
 
 			bridge.onConnected();
 		} catch (UnknownHostException e) {

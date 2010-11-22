@@ -32,6 +32,7 @@ public class HostBean extends AbstractBean {
 	private long id = -1;
 	private String nickname = null;
 	private String username = null;
+	private String password = null;
 	private String hostname = null;
 	private int port = 22;
 	private long lastConnect = -1;
@@ -74,6 +75,12 @@ public class HostBean extends AbstractBean {
 	}
 	public String getUsername() {
 		return username;
+	}
+	public void setPassword(String password) {
+		this.password = password;
+	}
+	public String getPassword() {
+		return password;
 	}
 	public void setHostname(String hostname) {
 		this.hostname = hostname;
@@ -138,6 +145,7 @@ public class HostBean extends AbstractBean {
 
 		values.put(HostDatabase.FIELD_HOST_NICKNAME, nickname);
 		values.put(HostDatabase.FIELD_HOST_USERNAME, username);
+		values.put(HostDatabase.FIELD_HOST_PASSWORD, password);
 		values.put(HostDatabase.FIELD_HOST_HOSTNAME, hostname);
 		values.put(HostDatabase.FIELD_HOST_PORT, port);
 		values.put(HostDatabase.FIELD_HOST_LASTCONNECT, lastConnect);
@@ -172,6 +180,12 @@ public class HostBean extends AbstractBean {
 		} else if (!username.equals(host.getUsername()))
 			return false;
 
+		if (password == null) {
+			if (host.getPassword() != null)
+				return false;
+		} else if (!password.equals(host.getPassword()))
+			return false;
+
 		if (hostname == null) {
 			if (host.getHostname() != null)
 				return false;
@@ -193,6 +207,7 @@ public class HostBean extends AbstractBean {
 
 		hash = 31 * hash + (null == nickname ? 0 : nickname.hashCode());
 		hash = 31 * hash + (null == username ? 0 : username.hashCode());
+		hash = 31 * hash + (null == password ? 0 : password.hashCode());
 		hash = 31 * hash + (null == hostname ? 0 : hostname.hashCode());
 		hash = 31 * hash + port;
 

@@ -48,6 +48,7 @@ public class HostDatabase extends RobustSQLiteOpenHelper {
 	public final static String TABLE_HOSTS = "hosts";
 	public final static String FIELD_HOST_NICKNAME = "nickname";
 	public final static String FIELD_HOST_USERNAME = "username";
+	public final static String FIELD_HOST_PASSWORD = "password";
 	public final static String FIELD_HOST_HOSTNAME = "hostname";
 	public final static String FIELD_HOST_PORT = "port";
 	public final static String FIELD_HOST_LASTCONNECT = "lastconnect";
@@ -121,6 +122,7 @@ public class HostDatabase extends RobustSQLiteOpenHelper {
 				+ " (_id INTEGER PRIMARY KEY, "
 				+ FIELD_HOST_NICKNAME + " TEXT, "
 				+ FIELD_HOST_USERNAME + " TEXT, "
+				+ FIELD_HOST_PASSWORD + " TEXT, "
 				+ FIELD_HOST_HOSTNAME + " TEXT, "
 				+ FIELD_HOST_PORT + " INTEGER, "
 				+ FIELD_HOST_LASTCONNECT + " INTEGER, "
@@ -301,6 +303,7 @@ public class HostDatabase extends RobustSQLiteOpenHelper {
 		final int COL_ID = c.getColumnIndexOrThrow("_id"),
 			COL_NICKNAME = c.getColumnIndexOrThrow(FIELD_HOST_NICKNAME),
 			COL_USERNAME = c.getColumnIndexOrThrow(FIELD_HOST_USERNAME),
+			COL_PASSWORD = c.getColumnIndexOrThrow(FIELD_HOST_PASSWORD),
 			COL_HOSTNAME = c.getColumnIndexOrThrow(FIELD_HOST_HOSTNAME),
 			COL_PORT = c.getColumnIndexOrThrow(FIELD_HOST_PORT),
 			COL_LASTCONNECT = c.getColumnIndexOrThrow(FIELD_HOST_LASTCONNECT),
@@ -317,6 +320,7 @@ public class HostDatabase extends RobustSQLiteOpenHelper {
 			host.setId(c.getLong(COL_ID));
 			host.setNickname(c.getString(COL_NICKNAME));
 			host.setUsername(c.getString(COL_USERNAME));
+			host.setPassword(c.getString(COL_PASSWORD));
 			host.setHostname(c.getString(COL_HOSTNAME));
 			host.setPort(c.getInt(COL_PORT));
 			host.setLastConnect(c.getLong(COL_LASTCONNECT));

@@ -11,25 +11,20 @@ import java.io.Reader;
 import java.io.StringWriter;
 import java.io.UnsupportedEncodingException;
 import java.io.Writer;
-import java.util.ArrayList;
-import java.util.List;
 
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
-import org.apache.http.NameValuePair;
 import org.apache.http.client.ClientProtocolException;
-import org.apache.http.client.entity.UrlEncodedFormEntity;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.conn.scheme.PlainSocketFactory;
 import org.apache.http.conn.scheme.Scheme;
 import org.apache.http.conn.scheme.SchemeRegistry;
+import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.DefaultHttpClient;
 import org.apache.http.impl.conn.tsccm.ThreadSafeClientConnManager;
-import org.apache.http.message.BasicNameValuePair;
 import org.apache.http.params.BasicHttpParams;
 import org.apache.http.params.HttpParams;
-import org.apache.http.protocol.HTTP;
 
 public class Fetcher {
 	DefaultHttpClient httpclient;
@@ -47,27 +42,12 @@ public class Fetcher {
 	}
 
 	public String doLogin(String username, String password) {
-	    /*String content = doGET("public/");
-
-	    Pattern pattern = Pattern.compile(".*pskey = \"(.+)\";.*");
-	    Matcher matcher = pattern.matcher(content);
-	    matcher.find();
-	    String key = matcher.group(1).toString();
-	    String hash = MD5.hex_hmac_md5(key, password.toLowerCase());
-
-	    pattern = Pattern.compile(".*<input type=\"hidden\" name=\"pstoken\" value=\"(.+?)\">.*");
-	    matcher = pattern.matcher(content);
-	    matcher.find();
-	    String token = matcher.group(1).toString();*/
-
-	    HttpPost httpost = new HttpPost(baseURL + "users/login");
-
-	    List <NameValuePair> nvps = new ArrayList <NameValuePair>();
-	    nvps.add(new BasicNameValuePair("user[login]", username));
-	    nvps.add(new BasicNameValuePair("user[password]", password));
+	    HttpPost httpost = new HttpPost(baseURL + "login");
 
 	    try {
-		    httpost.setEntity(new UrlEncodedFormEntity(nvps, HTTP.UTF_8));
+		    httpost.setEntity(new StringEntity("{\"user\":{\"login\":\"" + username + "\",\"password\":\"" + password + "\"}}"));
+		    httpost.setHeader("Content-Type", "application/json");
+		    httpost.setHeader("Accept", "application/json");
 
 		    HttpResponse response = httpclient.execute(httpost);
 		    HttpEntity entity = response.getEntity();
