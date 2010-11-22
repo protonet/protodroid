@@ -33,6 +33,7 @@ import java.util.regex.Pattern;
 import net.danopia.protonet.R;
 import net.danopia.protonet.bean.ChannelBean;
 import net.danopia.protonet.bean.HostBean;
+import net.danopia.protonet.client.Fetcher;
 import net.danopia.protonet.util.HostDatabase;
 import android.content.Context;
 import android.net.Uri;
@@ -183,6 +184,9 @@ public class Transport {
 
 	public void connect() {
 		try {
+			Fetcher fetcher = new Fetcher("https://" + host.getHostname());
+			String login = fetcher.doLogin(host.getUsername(), "password");
+
 			socket = new Socket(host.getHostname(), host.getPort());
 
 			connected = true;
